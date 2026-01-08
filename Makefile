@@ -1,44 +1,64 @@
-# Sources et répertoires
-SRCS = src/main.cpp \
-       src/VulkanContext.cpp
+NAME        := scop
 
-OBJ_DIR = build/obj
-DEP_DIR = build/dep
-INC_DIR = inc
+# Compilateurs
+CXX         := c++
+CC          := cc
 
-OBJS = $(addprefix $(OBJ_DIR)/, $(notdir $(SRCS:.cpp=.o)))
-DEPS = $(addprefix $(DEP_DIR)/, $(notdir $(SRCS:.cpp=.d)))
+# Flags
+CXXFLAGS    := -Wall -Wextra -Werror -MMD -MP -g3
+CFLAGS      := -Wall -Wextra -Werror -MMD -MP -g3
 
-CXX = g++
-CXXFLAGS = -Wall -Wextra -std=c++11 -g3 -I$(INC_DIR) -I$(HOME)/local/include
-LDFLAGS = -L$(HOME)/local/lib -lglfw -lvulkan
+# Dossiers
+SRC_DIR     := src
+LIB_DIR     := lib
+OBJ_DIR     := obj
+INC_DIR     := include
 
-# Cible principale
-all: vulkan
+# GLFW
+GLFW_DIR    := $(LIB_DIR)/glfw
+GLFW_INC    := -I$(GLFW_DIR)/include
+GLFW_LIB    := -L$(GLFW_DIR)/lib -lglfw
 
-vulkan: $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+# Includes
+INCLUDES    := -I$(INC_DIR) -I$(LIB_DIR)/include $(GLFW_INC)
 
-# Création des répertoires pour les objets et dépendances
-$(OBJ_DIR) $(DEP_DIR):
-	@mkdir -p $@
+# Sources
+CPP_SRCS    := $(wildcard $(SRC_DIR)/*.cpp)
+C_SRCS      := $(LIB_DIR)/src/glad.c
+SRCS        := $(CPP_SRCS) $(C_SRCS)
 
-# Règle pour les fichiers objets
-$(OBJ_DIR)/%.o: src/%.cpp $(DEP_DIR)/%.d | $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+# Objets + deps
+OBJS        := $(SRCS:%=$(OBJ_DIR)/%.o)
+DEPS        := $(OBJS:.o=.d)
 
-# Règle pour les fichiers de dépendance
-$(DEP_DIR)/%.d: src/%.cpp | $(DEP_DIR)
-	$(CXX) -MM $(CXXFLAGS) $< | sed 's|^.*:|$(OBJ_DIR)/$(notdir $@):|' > $@
+# Link
+LDFLAGS     := $(GLFW_LIB) -lGL -ldl -lm -lpthread
 
-# Nettoyage
+# ================= RULES =================
+
+all: $(NAME)
+
+$(NAME): $(OBJS)
+	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
+
+# C++
+$(OBJ_DIR)/%.cpp.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+
+# C
+$(OBJ_DIR)/%.c.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
 clean:
-	rm -rf $(OBJ_DIR) $(DEP_DIR) vulkan
+	rm -rf $(OBJ_DIR)
 
-# Rebuild complet
-re: clean all
+fclean: clean
+	rm -f $(NAME)
 
-# Inclusion des fichiers de dépendance, s'ils existent
+re: fclean all
+
 -include $(DEPS)
 
-.PHONY: all clean re
+.PHONY: all clean fclean re
