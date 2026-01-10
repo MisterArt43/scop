@@ -1,85 +1,24 @@
 #include <iostream>
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
 
-#include <cmath>
+#include <glad/glad.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-#include "../include/Camera.h"
-#include "../include/Input.h"
+#include "../include/Application.h"
 #include "../include/Material.h"
 #include "../include/Mesh.h"
 #include "../include/OBJParser.h"
 #include "../include/shaderClass.h"
 
-struct AppState
-{
-	Camera camera;
-	Input input;
-};
-
-static void framebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
-	glViewport(0, 0, width, height);
-	AppState* state = static_cast<AppState*>(glfwGetWindowUserPointer(window));
-	if (!state)
-		return;
-	if (height <= 0)
-		return;
-	state->camera.setAspect(static_cast<float>(width) / static_cast<float>(height));
-}
-
-static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	(void)scancode;
-	(void)mods;
-	AppState* state = static_cast<AppState*>(glfwGetWindowUserPointer(window));
-	if (!state)
-		return;
-	state->input.onKey(window, key, action);
-}
-
 int main(int argc, char** argv)
 {
 	try
 	{
-		AppState app{};
-		app.input.setObjPathsFromArgv(argc, argv);
-
-		glfwInit();
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-		glfwWindowHint(GLFW_DEPTH_BITS, 24);
-		glfwWindowHint(GLFW_SAMPLES, 4);
-
-		GLFWwindow* window = glfwCreateWindow(800, 800, "Abucia OpenGL", NULL, NULL);
-		if (window == NULL)
-		{
-			std::cout << "Failed to create GLFW window" << std::endl;
-			glfwTerminate();
-			return -1;
-		}
-		glfwMakeContextCurrent(window);
-		glfwSetWindowUserPointer(window, &app);
-		glfwSetKeyCallback(window, keyCallback);
-		glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-
-		gladLoadGL();
-
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
-		glClearDepth(1.0);
-		glDisable(GL_CULL_FACE);
-		glEnable(GL_MULTISAMPLE);
-
-		int fbWidth = 800;
-		int fbHeight = 800;
-		glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-		framebufferSizeCallback(window, fbWidth, fbHeight);
+		Application app{};
+		app.setObjPathsFromArgv(argc, argv);
+		app.initWindowAndGL(800, 800, "Abucia OpenGL");
 
 		Shader shaderProgram("shaders/basic.vert", "shaders/basic.frag");
 		Material material(shaderProgram);
@@ -117,8 +56,8 @@ int main(int argc, char** argv)
 			mesh.reset(new Mesh(verticesData, indicesData));
 		};
 
-		const std::string defaultObj = "ressources/Intergalactic_Spaceship-(Wavefront).obj";
-		if (!app.input.argvObjPaths().empty())	loadObjOrThrow(app.input.argvObjPaths()[0]);
+		const std::string defaultObj = "ressources/42.obj";
+		if (!app.argvObjPaths().empty())	loadObjOrThrow(app.argvObjPaths()[0]);
 		else
 		{
 			loadObjOrThrow(defaultObj);
@@ -128,12 +67,12 @@ int main(int argc, char** argv)
 
 		const math::Mat4 model = math::identity();
 
-		float lastTime = static_cast<float>(glfwGetTime());
-		while (!glfwWindowShouldClose(window))
+		float lastTime = app.time();
+		while (!app.shouldClose())
 		{
-			if (app.input.hasPendingObjPath())
+			if (app.hasPendingObjPath())
 			{
-				const std::string nextPath = app.input.consumePendingObjPath();
+				const std::string nextPath = app.consumePendingObjPath();
 				try
 				{
 					loadObjOrThrow(nextPath);
@@ -145,29 +84,12 @@ int main(int argc, char** argv)
 				}
 			}
 
-			const float now = static_cast<float>(glfwGetTime());
+			const float now = app.time();
 			const float deltaTime = now - lastTime;
 			lastTime = now;
+			app.update(deltaTime);
 
-			const float velocity = app.camera.moveSpeed * deltaTime;
-			if (app.input.keyDown(GLFW_KEY_W)) app.camera.moveForward(velocity);
-			if (app.input.keyDown(GLFW_KEY_S)) app.camera.moveForward(-velocity);
-			if (app.input.keyDown(GLFW_KEY_D)) app.camera.moveRight(velocity);
-			if (app.input.keyDown(GLFW_KEY_A)) app.camera.moveRight(-velocity);
-			if (app.input.keyDown(GLFW_KEY_Q)) app.camera.moveUp(-velocity);
-			if (app.input.keyDown(GLFW_KEY_E)) app.camera.moveUp(velocity);
-
-			float yawDelta = 0.0f;
-			float pitchDelta = 0.0f;
-			if (app.input.keyDown(GLFW_KEY_LEFT)) yawDelta -= app.camera.lookSpeedRadians * deltaTime;
-			if (app.input.keyDown(GLFW_KEY_RIGHT)) yawDelta += app.camera.lookSpeedRadians * deltaTime;
-			if (app.input.keyDown(GLFW_KEY_UP)) pitchDelta += app.camera.lookSpeedRadians * deltaTime;
-			if (app.input.keyDown(GLFW_KEY_DOWN)) pitchDelta -= app.camera.lookSpeedRadians * deltaTime;
-			if (yawDelta != 0.0f || pitchDelta != 0.0f)
-				app.camera.rotateYawPitch(yawDelta, pitchDelta);
-
-			glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			app.beginFrame(0.07f, 0.13f, 0.17f, 1.0f);
 
 			material.use();
 			material.setFloat("scale", 0.5f);
@@ -187,21 +109,19 @@ int main(int argc, char** argv)
 			}
 			material.setVec3("uColor", 1.0f, 1.0f, 1.0f);
 			material.setMat4("uModel", model);
-			material.setMat4("uView", app.camera.getViewMatrix());
-			material.setMat4("uProjection", app.camera.getProjectionMatrix());
+			material.setMat4("uView", app.camera().getViewMatrix());
+			material.setMat4("uProjection", app.camera().getProjectionMatrix());
 
 			if (mesh)
 				mesh->Draw();
 
-			glfwSwapBuffers(window);
-			glfwPollEvents();
+			app.swapBuffers();
+			app.pollEvents();
 		}
 
 		if (mesh)
 			mesh->Delete();
 		shaderProgram.Delete();
-		glfwDestroyWindow(window);
-		glfwTerminate();
 		return 0;
 	}
 	catch (const std::exception& e)
