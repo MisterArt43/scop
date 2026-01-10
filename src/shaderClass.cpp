@@ -76,7 +76,7 @@ void Shader::compileErrors(GLuint shader, const char* type)
 {
     GLint hasCompiled;
     GLchar infoLog[1024];
-    if (type != "PROGRAM")
+    if (type != std::string("PROGRAM"))
     {
         glGetShaderiv(shader, GL_COMPILE_STATUS, &hasCompiled);
         if (hasCompiled == GL_FALSE)

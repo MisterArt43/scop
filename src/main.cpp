@@ -2,11 +2,13 @@
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
 #include <cmath>
+#include <unordered_map>
 
 #include "../include/shaderClass.h"
-#include "../include/VAO.h"
-#include "../include/VBO.h"
-#include "../include/EBO.h"
+#include "../include/OBJParser.h"
+#include "../include/Camera.h"
+#include "../include/Mesh.h"
+#include "../include/Material.h"
 
 
 // Vertices coordinates
@@ -28,10 +30,78 @@ GLuint indices[] =
 	5, 4, 1 // Upper triangle
 };
 
+struct InputState
+{
+	bool w;
+	bool a;
+	bool s;
+	bool d;
+	bool q;
+	bool e;
+	bool left;
+	bool right;
+	bool up;
+	bool down;
+};
+
+struct AppState
+{
+	Camera camera;
+	InputState input;
+};
+
+static void framebufferSizeCallback(GLFWwindow* window, int width, int height)
+{
+	glViewport(0, 0, width, height);
+	AppState* state = static_cast<AppState*>(glfwGetWindowUserPointer(window));
+	if (!state)
+		return;
+	if (height <= 0)
+		return;
+	state->camera.setAspect(static_cast<float>(width) / static_cast<float>(height));
+}
+
+static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	(void)scancode;
+	(void)mods;
+	AppState* state = static_cast<AppState*>(glfwGetWindowUserPointer(window));
+	if (!state)
+		return;
+
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+		return;
+	}
+
+	const bool isDown = (action == GLFW_PRESS || action == GLFW_REPEAT);
+	const bool isUp = (action == GLFW_RELEASE);
+	if (!isDown && !isUp)
+		return;
+
+	switch (key)
+	{
+		case GLFW_KEY_W: state->input.w = isDown; break;
+		case GLFW_KEY_A: state->input.a = isDown; break;
+		case GLFW_KEY_S: state->input.s = isDown; break;
+		case GLFW_KEY_D: state->input.d = isDown; break;
+		case GLFW_KEY_Q: state->input.q = isDown; break;
+		case GLFW_KEY_E: state->input.e = isDown; break;
+		case GLFW_KEY_LEFT: state->input.left = isDown; break;
+		case GLFW_KEY_RIGHT: state->input.right = isDown; break;
+		case GLFW_KEY_UP: state->input.up = isDown; break;
+		case GLFW_KEY_DOWN: state->input.down = isDown; break;
+		default: break;
+	}
+}
+
 int main()
 {
 	try
 	{
+	AppState app{};
+	app.input = InputState{false, false, false, false, false, false, false, false, false, false};
 	// Initialize GLFW
 	glfwInit();
 
@@ -43,8 +113,12 @@ int main()
 	// So that means we only have the modern functions
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	// Create a GLFWwindow object of 800 by 800 pixels, naming it "YoutubeOpenGL"
-	GLFWwindow* window = glfwCreateWindow(800, 800, "YoutubeOpenGL", NULL, NULL);
+	// Request a depth buffer + MSAA (must be set before creating the window)
+	glfwWindowHint(GLFW_DEPTH_BITS, 24);
+	glfwWindowHint(GLFW_SAMPLES, 4);
+
+	// Create a GLFWwindow object of 800 by 800 pixels, naming it "Abucia OpenGL"
+	GLFWwindow* window = glfwCreateWindow(800, 800, "Abucia OpenGL", NULL, NULL);
 	// Error check if the window fails to create
 	if (window == NULL)
 	{
@@ -54,50 +128,111 @@ int main()
 	}
 	// Introduce the window into the current context
 	glfwMakeContextCurrent(window);
+	glfwSetWindowUserPointer(window, &app);
+	glfwSetKeyCallback(window, keyCallback);
+	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
 	//Load GLAD so it configures OpenGL
 	gladLoadGL();
-	// Specify the viewport of OpenGL in the Window
-	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
-	glViewport(0, 0, 800, 800);
+
+	// Render state
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
+	glClearDepth(1.0);
+	glDisable(GL_CULL_FACE);
+	// Set initial viewport + camera aspect using real framebuffer size
+	int fbWidth = 800;
+	int fbHeight = 800;
+	glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
+	framebufferSizeCallback(window, fbWidth, fbHeight);
 
 	Shader shaderProgram("shaders/basic.vert", "shaders/basic.frag");
+	Material material(shaderProgram);
 
-	VAO VAO1;
-	VAO1.Bind();
+	OBJParser objParser;
+	if (!objParser.loadFromFile("ressources/42.obj"))
+	{
+		throw std::runtime_error("Failed to load OBJ file.");
+	}
+	Vec3 kd{};
+	const bool hasKd = objParser.tryGetActiveDiffuse(kd);
+	Vec3 boundsMin = objParser.getBoundsMin();
+	Vec3 boundsMax = objParser.getBoundsMax();
+	const bool hasUVs = objParser.hasUVs();
+	Vec3 ka{0.1f, 0.1f, 0.1f};
+	if (!objParser.getActiveMaterialName().empty())
+	{
+		const std::unordered_map<std::string, MTLMaterial>& mats = objParser.getMaterials();
+		std::unordered_map<std::string, MTLMaterial>::const_iterator it = mats.find(objParser.getActiveMaterialName());
+		if (it != mats.end())
+			ka = it->second.Ka;
+	}
+	const std::vector<Vertex>& verticesData = objParser.getVertices();
+	const std::vector<uint32_t>& indicesData = objParser.getIndices();
+	(void)verticesData;
+	(void)indicesData;
 
-	VBO VBO1(vertices, sizeof(vertices));
-	EBO EBO1(indices, sizeof(indices));
+	Mesh mesh(verticesData, indicesData);
+	const math::Mat4 model = math::identity();
 
-	VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
-	VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	VAO1.Unbind();
-	VBO1.Unbind();
-	EBO1.Unbind();
-
-
-	GLuint uniID = glGetUniformLocation(shaderProgram.ID, "scale");
-
-	//antiliasing msaa 4x
+	// antialiasing msaa
 	glEnable(GL_MULTISAMPLE);
-	glfwWindowHint(GLFW_SAMPLES, 2);
-
-
 
 	// Main while loop
+	float lastTime = static_cast<float>(glfwGetTime());
 	while (!glfwWindowShouldClose(window))
 	{
+		const float now = static_cast<float>(glfwGetTime());
+		const float deltaTime = now - lastTime;
+		lastTime = now;
+
+		const float velocity = app.camera.moveSpeed * deltaTime;
+		if (app.input.w) app.camera.moveForward(velocity);
+		if (app.input.s) app.camera.moveForward(-velocity);
+		if (app.input.d) app.camera.moveRight(velocity);
+		if (app.input.a) app.camera.moveRight(-velocity);
+		// Q = down, E = up
+		if (app.input.q) app.camera.moveUp(-velocity);
+		if (app.input.e) app.camera.moveUp(velocity);
+
+		float yawDelta = 0.0f;
+		float pitchDelta = 0.0f;
+		if (app.input.left) yawDelta -= app.camera.lookSpeedRadians * deltaTime;
+		if (app.input.right) yawDelta += app.camera.lookSpeedRadians * deltaTime;
+		if (app.input.up) pitchDelta += app.camera.lookSpeedRadians * deltaTime;
+		if (app.input.down) pitchDelta -= app.camera.lookSpeedRadians * deltaTime;
+		if (yawDelta != 0.0f || pitchDelta != 0.0f)
+			app.camera.rotateYawPitch(yawDelta, pitchDelta);
+
 		// Specify the color of the background
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
 		// Clean the back buffer and assign the new color to it
-		glClear(GL_COLOR_BUFFER_BIT);
-		// Tell OpenGL which Shader Program we want to use
-		shaderProgram.Activate();
-		glUniform1f(uniID, 0.5f);
-		// Bind the VAO so OpenGL knows to use it
-		VAO1.Bind();
-		// Draw the triangle using the GL_TRIANGLES primitive
-		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		material.use();
+		material.setFloat("scale", 0.5f);
+		material.setInt("uUseGradient", 1);
+		material.setInt("uGradientUseUV", hasUVs ? 1 : 0);
+		material.setFloat("uMinY", boundsMin.y);
+		material.setFloat("uMaxY", boundsMax.y);
+		if (hasKd)
+		{
+			material.setVec3("uColorA", ka.x, ka.y, ka.z);
+			material.setVec3("uColorB", kd.x, kd.y, kd.z);
+		}
+		else
+		{
+			material.setVec3("uColorA", 0.10f, 0.20f, 0.60f);
+			material.setVec3("uColorB", 0.90f, 0.40f, 0.10f);
+		}
+		material.setVec3("uColor", 1.0f, 1.0f, 1.0f);
+		const math::Mat4 view = app.camera.getViewMatrix();
+		const math::Mat4 proj = app.camera.getProjectionMatrix();
+		material.setMat4("uModel", model);
+		material.setMat4("uView", view);
+		material.setMat4("uProjection", proj);
+
+
+		mesh.Draw();
 		// Swap the back buffer with the front buffer
 		glfwSwapBuffers(window);
 		// Take care of all GLFW events
@@ -105,11 +240,8 @@ int main()
 	}
 
 
+	mesh.Delete();
 
-	// Delete all the objects we've created
-	VAO1.Delete();
-	VBO1.Delete();
-	EBO1.Delete();
 	shaderProgram.Delete();
 	// Delete window before ending the program
 	glfwDestroyWindow(window);
