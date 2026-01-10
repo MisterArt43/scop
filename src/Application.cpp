@@ -138,6 +138,9 @@ void Application::update(float deltaTime)
 	if (m_input.keyDown(GLFW_KEY_DOWN)) pitchDelta -= m_camera.lookSpeedRadians * deltaTime;
 	if (yawDelta != 0.0f || pitchDelta != 0.0f)
 		m_camera.rotateYawPitch(yawDelta, pitchDelta);
+	
+	if (m_input.keyDown(GLFW_KEY_LEFT_SHIFT)) glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	else glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 }
 
 const std::vector<std::string>& Application::argvObjPaths() const
