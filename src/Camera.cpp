@@ -1,7 +1,7 @@
 #include "../include/Camera.h"
 
 Camera::Camera()
-	: moveSpeed(2.5f)
+	: moveSpeed(7.5f)
 	, lookSpeedRadians(math::radians(90.0f))
 	, position{0.0f, 0.0f, 3.0f}
 	, front{0.0f, 0.0f, -1.0f}
