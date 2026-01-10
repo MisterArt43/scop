@@ -1,7 +1,7 @@
 #include "../include/Camera.h"
 
 Camera::Camera()
-	: moveSpeed(7.5f)
+	: moveSpeed(30.0f)
 	, lookSpeedRadians(math::radians(90.0f))
 	, position{0.0f, 0.0f, 3.0f}
 	, front{0.0f, 0.0f, -1.0f}
@@ -13,7 +13,7 @@ Camera::Camera()
 	, fovRadians(math::radians(80.0f))
 	, aspect(1.0f)
 	, zNear(0.1f)
-	, zFar(100.0f)
+	, zFar(500.0f)
 {
 	updateAxesFromAngles();
 }
