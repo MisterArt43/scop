@@ -59,6 +59,7 @@ void Input::onKey(GLFWwindow* window, int key, int action)
 
 	if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
 	{
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 		if (m_nextArgvIndex < m_argvObjPaths.size())
 			setPendingObjPath(m_argvObjPaths[m_nextArgvIndex++]);
 		else
@@ -67,6 +68,7 @@ void Input::onKey(GLFWwindow* window, int key, int action)
 			if (!picked.empty())
 				setPendingObjPath(picked);
 		}
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		return;
 	}
 
