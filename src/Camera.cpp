@@ -13,7 +13,7 @@ Camera::Camera()
 	, fovRadians(math::radians(80.0f))
 	, aspect(1.0f)
 	, zNear(0.1f)
-	, zFar(500.0f)
+	, zFar(1000.0f)
 {
 	updateAxesFromAngles();
 }

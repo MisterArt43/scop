@@ -141,6 +141,12 @@ void Application::update(float deltaTime)
 	
 	if (m_input.keyDown(GLFW_KEY_LEFT_SHIFT)) glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 	else glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+
+	if (m_input.keyDown(GLFW_KEY_LEFT_ALT)) {
+		glEnable(GL_CULL_FACE);
+	} else {
+		glDisable(GL_CULL_FACE);
+	}
 }
 
 const std::vector<std::string>& Application::argvObjPaths() const
