@@ -14,6 +14,10 @@ struct Vec3 {
     float x, y, z;
 };
 
+struct Pixel {
+    int r, g, b;
+};
+
 struct Vertex {
     Vec3 position;
     Vec3 normal;
@@ -29,6 +33,10 @@ struct MTLMaterial {
     float d{1.0f};
     int illum{0};
     std::string map_Kd;
+    int textureWidth{0};
+    int textureHeight{0};
+    std::vector<Pixel> textureData;
+
 };
 
 class OBJParser {
@@ -62,6 +70,9 @@ private:
     Vec3 m_boundsMax{0.0f, 0.0f, 0.0f};
     bool m_hasUVs{false};
 
+    //PPM parser pour les textures
+    static std::string directoryOf(const std::string& filepath);
+
     // Données finales OpenGL
     std::vector<Vertex> m_vertices;
     std::vector<uint32_t> m_indices;
@@ -84,7 +95,6 @@ private:
     uint32_t getOrCreateVertex(const ObjIndex& idx);
 
 	bool loadMtlFromFile(const std::string& filepath);
-	static std::string directoryOf(const std::string& filepath);
 
     int fixIndex(int idx, int size) const;
 };

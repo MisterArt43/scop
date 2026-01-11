@@ -48,6 +48,45 @@ std::string OBJParser::directoryOf(const std::string& filepath)
     return filepath.substr(0, slash);
 }
 
+bool loadPPM(const std::string& filepath, std::vector<Pixel>& image, int& width, int& height) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        std::cerr << "Impossible d'ouvrir le fichier PPM : " << filepath << std::endl;
+        return false;
+    }
+
+    std::string line;
+    std::getline(file, line);  // Lire la ligne d'entête (P3)
+
+    // Vérifier le format
+    if (line != "P3") {
+        std::cerr << "Format PPM invalide. Attendu P3." << std::endl;
+        return false;
+    }
+
+    // Ignorer les lignes de commentaires
+    do {
+        std::getline(file, line);
+    } while (line[0] == '#');
+
+    // Lire la largeur et la hauteur
+    std::istringstream sizeStream(line);
+    sizeStream >> width >> height;
+
+    // Lire la valeur maximale
+    int maxColorValue;
+    file >> maxColorValue;
+
+    // Lire les pixels
+    image.resize(width * height);
+    for (int i = 0; i < width * height; ++i) {
+        file >> image[i].r >> image[i].g >> image[i].b;
+    }
+
+    return true;
+}
+
+
 bool OBJParser::loadMtlFromFile(const std::string& filepath)
 {
     std::ifstream file(filepath);
@@ -114,10 +153,25 @@ bool OBJParser::loadMtlFromFile(const std::string& filepath)
         }
         else if (key == "map_Kd")
         {
-            std::string rest;
-            std::getline(iss, rest);
-            rest = ltrim(rest);
-            current.map_Kd = rest;
+            std::string textureFile;
+            iss >> textureFile;
+            textureFile = ltrim(textureFile);
+            current.map_Kd = textureFile;
+
+            // Charger la texture PPM
+            std::vector<Pixel> image;
+            int width, height;
+            if (loadPPM(textureFile, image, width, height))
+            {
+                // Sauvegarder l'image dans le matériau
+                current.textureWidth = width;
+                current.textureHeight = height;
+                current.textureData = image;
+            }
+            else
+            {
+                std::cerr << "Échec du chargement de la texture PPM : " << textureFile << std::endl;
+            }
         }
     }
 
@@ -126,6 +180,7 @@ bool OBJParser::loadMtlFromFile(const std::string& filepath)
 
     return true;
 }
+
 
 bool OBJParser::tryGetActiveDiffuse(Vec3& outKd) const
 {
@@ -224,6 +279,20 @@ bool OBJParser::loadFromFile(const std::string& filepath) {
         std::string type;
         iss >> type;
 
+        // TODO : 
+        // 's' pour smooth shading groups
+        // 'o' pour object name
+        // 'g' pour group name
+        // 'l' pour line (non supporté ici)
+        // 'p' pour point (non supporté ici)
+        // '#' pour commentaire
+
+        // 'vt' pour texture coords
+        // 'vn' pour vertex normals
+        // 'v' pour vertex positions
+        // 'f' pour faces
+        // 'mtllib' pour fichier de matériaux
+        // 'usemtl' pour utiliser un matériau
         if (type == "v") {
             Vec3 v;
             iss >> v.x >> v.y >> v.z;
