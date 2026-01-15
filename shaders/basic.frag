@@ -6,6 +6,11 @@ uniform vec3 uColorA;
 uniform vec3 uColorB;
 uniform int uUseGradient;
 uniform int uGradientUseUV;
+uniform int uUseTexture;
+uniform sampler2D uTexture;
+uniform int uUvMode;
+uniform vec2 uUvScale;
+uniform vec2 uUvOffset;
 uniform float uMinY;
 uniform float uMaxY;
 
@@ -14,6 +19,24 @@ in vec2 vUV;
 
 void main()
 {
+   if (uUseTexture != 0)
+   {
+     vec2 uv = vUV;
+     // uUvMode:
+     // 0=none, 1=flipU, 2=flipV, 3=flipUV, 4=swap, 5=swap+flipU, 6=swap+flipV, 7=swap+flipUV
+     if (uUvMode >= 4)
+        uv = uv.yx;
+     if (uUvMode == 1 || uUvMode == 3 || uUvMode == 5 || uUvMode == 7)
+        uv.x = 1.0 - uv.x;
+     if (uUvMode == 2 || uUvMode == 3 || uUvMode == 6 || uUvMode == 7)
+        uv.y = 1.0 - uv.y;
+     uv = uv * uUvScale + uUvOffset;
+      //DEBUG au dessus
+
+      FragColor = vec4(texture(uTexture, uv).rgb, 1.0f);
+      return;
+   }
+
    if (uUseGradient == 0)
    {
       FragColor = vec4(uColor, 1.0f);

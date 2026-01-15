@@ -57,6 +57,12 @@ void Input::onKey(GLFWwindow* window, int key, int action)
 		return;
 	}
 
+	if (key == GLFW_KEY_R && action == GLFW_PRESS)
+	{
+		setPendingObjPath(std::string());
+		return;
+	}
+
 	if (key == GLFW_KEY_TAB && action == GLFW_PRESS)
 	{
 		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);

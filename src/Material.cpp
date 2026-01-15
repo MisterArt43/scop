@@ -31,6 +31,12 @@ void Material::setFloat(const std::string& name, float value)
 	glUniform1f(getLocation(name), value);
 }
 
+void Material::setVec2(const std::string& name, float x, float y)
+{
+	use();
+	glUniform2f(getLocation(name), x, y);
+}
+
 void Material::setVec3(const std::string& name, float x, float y, float z)
 {
 	use();

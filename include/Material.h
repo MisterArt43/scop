@@ -15,6 +15,7 @@ class Material
 		void use();
 
 		void setFloat(const std::string& name, float value);
+		void setVec2(const std::string& name, float x, float y);
 		void setVec3(const std::string& name, float x, float y, float z);
 		void setInt(const std::string& name, int value);
 		void setMat4(const std::string& name, const math::Mat4& value);

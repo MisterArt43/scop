@@ -49,6 +49,7 @@ public:
 
     const std::unordered_map<std::string, MTLMaterial>& getMaterials() const { return m_materials; }
     const std::string& getActiveMaterialName() const { return m_activeMaterial; }
+    const MTLMaterial* getResolvedActiveMaterial() const;
     bool tryGetActiveDiffuse(Vec3& outKd) const;
     const Vec3& getBoundsMin() const { return m_boundsMin; }
     const Vec3& getBoundsMax() const { return m_boundsMax; }

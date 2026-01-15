@@ -25,6 +25,8 @@ int main(int argc, char** argv)
 
 		OBJParser objParser;
 		std::unique_ptr<Mesh> mesh;
+		GLuint textureId = 0;
+		bool hasTexture = false;
 		Vec3 kd{};
 		bool hasKd = false;
 		Vec3 boundsMin{};
@@ -34,9 +36,12 @@ int main(int argc, char** argv)
 		std::string currentObjPath;
 
 		auto loadObjOrThrow = [&](const std::string& path) {
-			if (!objParser.loadFromFile(path))
-				throw std::runtime_error("Failed to load OBJ file: " + path);
-			currentObjPath = path;
+			std::string actualPath = path;
+			if (actualPath.empty())
+				actualPath = "ressources/42.obj";
+			if (!objParser.loadFromFile(actualPath))
+				throw std::runtime_error("Failed to load OBJ file: " + actualPath);
+			currentObjPath = actualPath;
 			hasKd = objParser.tryGetActiveDiffuse(kd);
 			boundsMin = objParser.getBoundsMin();
 			boundsMax = objParser.getBoundsMax();
@@ -49,11 +54,86 @@ int main(int argc, char** argv)
 				if (it != mats.end())
 					ka = it->second.Ka;
 			}
-			const std::vector<Vertex>& verticesData = objParser.getVertices();
+			std::vector<Vertex> verticesData = objParser.getVertices();
 			const std::vector<uint32_t>& indicesData = objParser.getIndices();
+			const MTLMaterial* mat = objParser.getResolvedActiveMaterial();
+			const bool hasTexPixels = (mat && mat->textureWidth > 0 && mat->textureHeight > 0 && !mat->textureData.empty());
+
+			// // Debug UV range; some models use UVs outside [0,1] (tiling), which with repeat can look "decalé".
+			// if (!verticesData.empty() && hasUVs)
+			// {
+			// 	float minU = verticesData[0].uv.x;
+			// 	float maxU = verticesData[0].uv.x;
+			// 	float minV = verticesData[0].uv.y;
+			// 	float maxV = verticesData[0].uv.y;
+			// 	for (size_t i = 1; i < verticesData.size(); ++i)
+			// 	{
+			// 		const float u = verticesData[i].uv.x;
+			// 		const float v = verticesData[i].uv.y;
+			// 		if (u < minU) minU = u;
+			// 		if (u > maxU) maxU = u;
+			// 		if (v < minV) minV = v;
+			// 		if (v > maxV) maxV = v;
+			// 	}
+			// 	std::cout << "UV range: U[" << minU << ", " << maxU << "] V[" << minV << ", " << maxV << "]\n";
+
+			// 	// If we display a single texture, ensure U uses the full [0,1] range.
+			// 	// Some assets store UVs in a sub-rect of the texture, which looks like a big left/right offset.
+			// 	const float eps = 0.0005f;
+			// 	if (hasTexPixels && (minU < -eps || maxU > 1.0f + eps || minU > eps || maxU < 1.0f - eps))
+			// 	{
+			// 		const float rangeU = maxU - minU;
+			// 		if (rangeU > 0.00001f)
+			// 		{
+			// 			for (size_t i = 0; i < verticesData.size(); ++i)
+			// 			{
+			// 				verticesData[i].uv.x = (verticesData[i].uv.x - minU) / rangeU;
+			// 			}
+			// 			std::cout << "U remapped to [0,1] for texture display\n";
+			// 		}
+			// 	}
+			// }
 			if (mesh)
 				mesh->Delete();
 			mesh.reset(new Mesh(verticesData, indicesData));
+
+			// (Re)build texture from MTLMaterial::textureData (PPM pixels)
+			if (textureId != 0)
+			{
+				glDeleteTextures(1, &textureId);
+				textureId = 0;
+			}
+			hasTexture = false;
+			if (hasTexPixels)
+			{
+				const int w = mat->textureWidth;
+				const int h = mat->textureHeight;
+				const size_t expected = static_cast<size_t>(w) * static_cast<size_t>(h);
+				if (mat->textureData.size() >= expected)
+				{
+					std::vector<unsigned char> rgb;
+					rgb.resize(expected * 3u);
+					for (size_t i = 0; i < expected; ++i)
+					{
+						const Pixel& p = mat->textureData[i];
+						rgb[i * 3u + 0u] = static_cast<unsigned char>(p.r < 0 ? 0 : (p.r > 255 ? 255 : p.r));
+						rgb[i * 3u + 1u] = static_cast<unsigned char>(p.g < 0 ? 0 : (p.g > 255 ? 255 : p.g));
+						rgb[i * 3u + 2u] = static_cast<unsigned char>(p.b < 0 ? 0 : (p.b > 255 ? 255 : p.b));
+					}
+
+					glGenTextures(1, &textureId);
+					glBindTexture(GL_TEXTURE_2D, textureId);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+					glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+					glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, rgb.data());
+					glGenerateMipmap(GL_TEXTURE_2D);
+					glBindTexture(GL_TEXTURE_2D, 0);
+					hasTexture = true;
+				}
+			}
 		};
 
 		const std::string defaultObj = "ressources/42.obj";
@@ -95,6 +175,20 @@ int main(int argc, char** argv)
 			material.setFloat("scale", 0.5f);
 			material.setInt("uUseGradient", 1);
 			material.setInt("uGradientUseUV", hasUVs ? 1 : 0);
+			const int useTexture = (hasTexture && hasUVs && textureId != 0) ? 1 : 0;
+			material.setInt("uUseTexture", useTexture);
+			if (useTexture)
+			{
+				// UV transform controls (identity by default). If texture doesn't align, try uUvMode=1/2/4/5/6/7.
+				material.setInt("uUvMode", 0);
+				material.setVec2("uUvScale", 1.0f, 1.0f);
+				material.setVec2("uUvOffset", 0.0f, 0.0f);
+
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, textureId);
+				material.setInt("uTexture", 0);
+				material.setInt("uUvMode", 2);
+			}
 			material.setFloat("uMinY", boundsMin.y);
 			material.setFloat("uMaxY", boundsMax.y);
 			if (hasKd)
@@ -114,6 +208,8 @@ int main(int argc, char** argv)
 
 			if (mesh)
 				mesh->Draw();
+			if (useTexture)
+				glBindTexture(GL_TEXTURE_2D, 0);
 
 			app.swapBuffers();
 			app.pollEvents();
@@ -121,6 +217,8 @@ int main(int argc, char** argv)
 
 		if (mesh)
 			mesh->Delete();
+		if (textureId != 0)
+			glDeleteTextures(1, &textureId);
 		shaderProgram.Delete();
 		return 0;
 	}

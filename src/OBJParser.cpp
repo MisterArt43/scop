@@ -5,6 +5,21 @@
 #include <unordered_map>
 #include <iostream>
 
+static bool readPpmToken(std::istream& in, std::string& outTok)
+{
+    while (in >> outTok)
+    {
+        if (!outTok.empty() && outTok[0] == '#')
+        {
+            std::string rest;
+            std::getline(in, rest);
+            continue;
+        }
+        return true;
+    }
+    return false;
+}
+
 static std::string ltrim(std::string s)
 {
     s.erase(0, s.find_first_not_of(" \t\r\n"));
@@ -55,32 +70,50 @@ bool loadPPM(const std::string& filepath, std::vector<Pixel>& image, int& width,
         return false;
     }
 
-    std::string line;
-    std::getline(file, line);  // Lire la ligne d'entête (P3)
-
-    // Vérifier le format
-    if (line != "P3") {
+    std::string tok;
+    if (!readPpmToken(file, tok) || tok != "P3")
+    {
         std::cerr << "Format PPM invalide. Attendu P3." << std::endl;
         return false;
     }
 
-    // Ignorer les lignes de commentaires
-    do {
-        std::getline(file, line);
-    } while (line[0] == '#');
+    width = 0;
+    height = 0;
+    int maxColorValue = 0;
+    if (!readPpmToken(file, tok)) return false;
+    width = std::stoi(tok);
+    if (!readPpmToken(file, tok)) return false;
+    height = std::stoi(tok);
+    if (!readPpmToken(file, tok)) return false;
+    maxColorValue = std::stoi(tok);
+    if (width <= 0 || height <= 0 || maxColorValue <= 0)
+    {
+        std::cerr << "PPM header invalide: " << filepath << std::endl;
+        return false;
+    }
 
-    // Lire la largeur et la hauteur
-    std::istringstream sizeStream(line);
-    sizeStream >> width >> height;
+    image.clear();
+    image.resize(static_cast<size_t>(width) * static_cast<size_t>(height));
+    for (int i = 0; i < width * height; ++i)
+    {
+        int r = 0, g = 0, b = 0;
+        if (!readPpmToken(file, tok)) return false;
+        r = std::stoi(tok);
+        if (!readPpmToken(file, tok)) return false;
+        g = std::stoi(tok);
+        if (!readPpmToken(file, tok)) return false;
+        b = std::stoi(tok);
 
-    // Lire la valeur maximale
-    int maxColorValue;
-    file >> maxColorValue;
-
-    // Lire les pixels
-    image.resize(width * height);
-    for (int i = 0; i < width * height; ++i) {
-        file >> image[i].r >> image[i].g >> image[i].b;
+        // Scale to 0..255 if maxColorValue differs
+        if (maxColorValue != 255)
+        {
+            r = (r * 255) / maxColorValue;
+            g = (g * 255) / maxColorValue;
+            b = (b * 255) / maxColorValue;
+        }
+        image[i].r = r;
+        image[i].g = g;
+        image[i].b = b;
     }
 
     return true;
@@ -89,12 +122,15 @@ bool loadPPM(const std::string& filepath, std::vector<Pixel>& image, int& width,
 
 bool OBJParser::loadMtlFromFile(const std::string& filepath)
 {
+    std::cout << "DEBUG 1 /////////////////////////////" << std::endl;
     std::ifstream file(filepath);
     if (!file.is_open())
     {
         std::cerr << "OBJParser: impossible d'ouvrir MTL " << filepath << "\n";
         return false;
     }
+
+    const std::string baseDir = directoryOf(filepath);
 
     MTLMaterial current;
     bool hasCurrent = false;
@@ -153,15 +189,22 @@ bool OBJParser::loadMtlFromFile(const std::string& filepath)
         }
         else if (key == "map_Kd")
         {
+            std::cout << "Loading texture map_Kd for material " << current.name << "\n";
+            std::cout << "DEBUG /////////////////////////////" << std::endl;
+            
             std::string textureFile;
-            iss >> textureFile;
+            std::getline(iss, textureFile);
             textureFile = ltrim(textureFile);
             current.map_Kd = textureFile;
+
+            std::string texturePath = textureFile;
+            if (!texturePath.empty() && texturePath[0] != '/')
+                texturePath = baseDir + "/" + texturePath;
 
             // Charger la texture PPM
             std::vector<Pixel> image;
             int width, height;
-            if (loadPPM(textureFile, image, width, height))
+            if (loadPPM(texturePath, image, width, height))
             {
                 // Sauvegarder l'image dans le matériau
                 current.textureWidth = width;
@@ -170,7 +213,7 @@ bool OBJParser::loadMtlFromFile(const std::string& filepath)
             }
             else
             {
-                std::cerr << "Échec du chargement de la texture PPM : " << textureFile << std::endl;
+                std::cerr << "Échec du chargement de la texture PPM : " << texturePath << std::endl;
             }
         }
     }
@@ -193,6 +236,17 @@ bool OBJParser::tryGetActiveDiffuse(Vec3& outKd) const
         return false;
     outKd = it->second.Kd;
     return true;
+}
+
+const MTLMaterial* OBJParser::getResolvedActiveMaterial() const
+{
+    const std::string& name = !m_activeMaterial.empty() ? m_activeMaterial : m_firstUsedMaterial;
+    if (name.empty())
+        return NULL;
+    std::unordered_map<std::string, MTLMaterial>::const_iterator it = m_materials.find(name);
+    if (it == m_materials.end())
+        return NULL;
+    return &it->second;
 }
 
 // Convertit un index OBJ (1-based, négatif pour relatif) en index C++ (0-based)
@@ -325,7 +379,8 @@ bool OBJParser::loadFromFile(const std::string& filepath) {
         }
         else if (type == "mtllib") {
             std::string mtlFile;
-            iss >> mtlFile;
+            getline(iss, mtlFile);
+            mtlFile = ltrim(mtlFile);
             if (!mtlFile.empty())
                 loadMtlFromFile(baseDir + "/" + mtlFile);
         }
