@@ -32,7 +32,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd tEXTURE\\FACE Base Color.ppm
+map_Kd tEXTURE/FACE Base Color.ppm
 
 newmtl Hair
 Ns 225.000000
@@ -43,7 +43,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd tEXTURE\\COLORS.ppm
+map_Kd tEXTURE/COLORS.ppm
 
 newmtl Head
 Ns 225.000000
@@ -54,7 +54,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd tEXTURE\\BOdy Skin Base Color.ppm
+map_Kd tEXTURE/BOdy Skin Base Color.ppm
 
 newmtl Scarf
 Ns 78.564058
@@ -65,7 +65,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd tEXTURE\\COLORS.ppm
+map_Kd tEXTURE/COLORS.ppm
 
 newmtl Top
 Ns 81.000006
@@ -76,5 +76,5 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 2
-map_Bump -bm 0.500000 tEXTURE\\top normal.ppm
-map_Kd -s 5.000000 5.000000 5.000000 tEXTURE\\top color.ppm
+map_Bump -bm 0.500000 tEXTURE/top normal.ppm
+map_Kd -s 5.000000 5.000000 5.000000 tEXTURE/top color.ppm

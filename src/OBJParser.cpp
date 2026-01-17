@@ -48,8 +48,8 @@ void OBJParser::clear() {
     m_materials.clear();
     m_activeMaterial.clear();
     m_firstUsedMaterial.clear();
-    m_boundsMin = Vec3{0.0f, 0.0f, 0.0f};
-    m_boundsMax = Vec3{0.0f, 0.0f, 0.0f};
+    m_boundsMin = math::Vec3{0.0f, 0.0f, 0.0f};
+    m_boundsMax = math::Vec3{0.0f, 0.0f, 0.0f};
     m_hasUVs = false;
 }
 
@@ -225,7 +225,7 @@ bool OBJParser::loadMtlFromFile(const std::string& filepath)
 }
 
 
-bool OBJParser::tryGetActiveDiffuse(Vec3& outKd) const
+bool OBJParser::tryGetActiveDiffuse(math::Vec3& outKd) const
 {
     const std::string& name = !m_activeMaterial.empty() ? m_activeMaterial : m_firstUsedMaterial;
     if (name.empty())
@@ -304,8 +304,8 @@ uint32_t OBJParser::getOrCreateVertex(const ObjIndex& idx) {
 
     Vertex v{};
     v.position = m_positions[idx.v];
-    v.normal   = (idx.vn >= 0) ? m_normals[idx.vn] : Vec3{0, 0, 0};
-    v.uv       = (idx.vt >= 0) ? m_uvs[idx.vt]     : Vec2{0, 0};
+    v.normal   = (idx.vn >= 0) ? m_normals[idx.vn] : math::Vec3{0, 0, 0};
+    v.uv       = (idx.vt >= 0) ? m_uvs[idx.vt]     : math::Vec2{0, 0};
 
     uint32_t newIndex = static_cast<uint32_t>(m_vertices.size());
     m_vertices.push_back(v);
@@ -348,7 +348,7 @@ bool OBJParser::loadFromFile(const std::string& filepath) {
         // 'mtllib' pour fichier de matériaux
         // 'usemtl' pour utiliser un matériau
         if (type == "v") {
-            Vec3 v;
+            math::Vec3 v;
             iss >> v.x >> v.y >> v.z;
             m_positions.push_back(v);
             if (m_positions.size() == 1)
@@ -367,12 +367,12 @@ bool OBJParser::loadFromFile(const std::string& filepath) {
             }
         }
         else if (type == "vn") {
-            Vec3 n;
+            math::Vec3 n;
             iss >> n.x >> n.y >> n.z;
             m_normals.push_back(n);
         }
         else if (type == "vt") {
-            Vec2 uv;
+            math::Vec2 uv;
             iss >> uv.x >> uv.y;
             m_uvs.push_back(uv);
 			m_hasUVs = true;
@@ -408,8 +408,8 @@ bool OBJParser::loadFromFile(const std::string& filepath) {
                 } else {
                     Vertex v{};
                     v.position = m_positions[idx.v];
-                    v.normal   = (idx.vn >= 0) ? m_normals[idx.vn] : Vec3{0,0,0};
-                    v.uv       = (idx.vt >= 0) ? m_uvs[idx.vt]     : Vec2{0,0};
+                    v.normal   = (idx.vn >= 0) ? m_normals[idx.vn] : math::Vec3{0,0,0};
+                    v.uv       = (idx.vt >= 0) ? m_uvs[idx.vt]     : math::Vec2{0,0};
 
                     vertIndex = (uint32_t)m_vertices.size();
                     m_vertices.push_back(v);

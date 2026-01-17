@@ -11,6 +11,7 @@
 #include "../include/Mesh.h"
 #include "../include/OBJParser.h"
 #include "../include/shaderClass.h"
+#include <ctime>
 
 int main(int argc, char** argv)
 {
@@ -27,12 +28,12 @@ int main(int argc, char** argv)
 		std::unique_ptr<Mesh> mesh;
 		GLuint textureId = 0;
 		bool hasTexture = false;
-		Vec3 kd{};
+		math::Vec3 kd{};
 		bool hasKd = false;
-		Vec3 boundsMin{};
-		Vec3 boundsMax{};
+		math::Vec3 boundsMin{};
+		math::Vec3 boundsMax{};
 		bool hasUVs = false;
-		Vec3 ka{0.1f, 0.1f, 0.1f};
+		math::Vec3 ka{0.1f, 0.1f, 0.1f};
 		std::string currentObjPath;
 
 		auto loadObjOrThrow = [&](const std::string& path) {
@@ -46,7 +47,7 @@ int main(int argc, char** argv)
 			boundsMin = objParser.getBoundsMin();
 			boundsMax = objParser.getBoundsMax();
 			hasUVs = objParser.hasUVs();
-			ka = Vec3{0.1f, 0.1f, 0.1f};
+			ka = math::Vec3{0.1f, 0.1f, 0.1f};
 			if (!objParser.getActiveMaterialName().empty())
 			{
 				const std::unordered_map<std::string, MTLMaterial>& mats = objParser.getMaterials();
@@ -59,40 +60,6 @@ int main(int argc, char** argv)
 			const MTLMaterial* mat = objParser.getResolvedActiveMaterial();
 			const bool hasTexPixels = (mat && mat->textureWidth > 0 && mat->textureHeight > 0 && !mat->textureData.empty());
 
-			// // Debug UV range; some models use UVs outside [0,1] (tiling), which with repeat can look "decalé".
-			// if (!verticesData.empty() && hasUVs)
-			// {
-			// 	float minU = verticesData[0].uv.x;
-			// 	float maxU = verticesData[0].uv.x;
-			// 	float minV = verticesData[0].uv.y;
-			// 	float maxV = verticesData[0].uv.y;
-			// 	for (size_t i = 1; i < verticesData.size(); ++i)
-			// 	{
-			// 		const float u = verticesData[i].uv.x;
-			// 		const float v = verticesData[i].uv.y;
-			// 		if (u < minU) minU = u;
-			// 		if (u > maxU) maxU = u;
-			// 		if (v < minV) minV = v;
-			// 		if (v > maxV) maxV = v;
-			// 	}
-			// 	std::cout << "UV range: U[" << minU << ", " << maxU << "] V[" << minV << ", " << maxV << "]\n";
-
-			// 	// If we display a single texture, ensure U uses the full [0,1] range.
-			// 	// Some assets store UVs in a sub-rect of the texture, which looks like a big left/right offset.
-			// 	const float eps = 0.0005f;
-			// 	if (hasTexPixels && (minU < -eps || maxU > 1.0f + eps || minU > eps || maxU < 1.0f - eps))
-			// 	{
-			// 		const float rangeU = maxU - minU;
-			// 		if (rangeU > 0.00001f)
-			// 		{
-			// 			for (size_t i = 0; i < verticesData.size(); ++i)
-			// 			{
-			// 				verticesData[i].uv.x = (verticesData[i].uv.x - minU) / rangeU;
-			// 			}
-			// 			std::cout << "U remapped to [0,1] for texture display\n";
-			// 		}
-			// 	}
-			// }
 			if (mesh)
 				mesh->Delete();
 			mesh.reset(new Mesh(verticesData, indicesData));
@@ -172,6 +139,29 @@ int main(int argc, char** argv)
 			app.beginFrame(0.07f, 0.13f, 0.17f, 1.0f);
 
 			material.use();
+			
+			//shadertoys uniforms
+			float width = 800.0f;
+			float height = 800.0f;
+			glfwGetWindowSize(app.window(), (int*)&width, (int*)&height);
+			material.setVec2("iResolution", width, height);
+			material.setFloat("iTime", now);
+			material.setFloat("iTimeDelta", deltaTime);
+			material.setFloat("iFrameRate", (deltaTime > 0.0f) ? (1.0f / deltaTime) : 0.0f);
+			static int frameCount = 0;
+			material.setInt("iFrame", frameCount++);
+			material.setFloat("iChannelTime[0]", now);
+			material.setVec3("iChannelResolution[0]", 800.0f, 800.0f, 0.0f);
+			double mouseX, mouseY;
+			glfwGetCursorPos(app.window(), &mouseX, &mouseY);
+			material.setVec4("iMouse", (float)mouseX, (float)(height - mouseY), 0.0f, 0.0f);
+			// Year, month, day, time in seconds
+			std::time_t t = std::time(nullptr);
+			std::tm* nowTm = std::localtime(&t);
+			float secondsInDay = nowTm->tm_hour * 3600.0f + nowTm->tm_min * 60.0f + nowTm->tm_sec;
+			material.setVec4("iDate", nowTm->tm_year + 1900, nowTm->tm_mon + 1, nowTm->tm_mday, secondsInDay);
+
+
 			material.setFloat("scale", 0.5f);
 			material.setInt("uUseGradient", 1);
 			material.setInt("uGradientUseUV", hasUVs ? 1 : 0);

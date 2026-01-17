@@ -43,6 +43,12 @@ void Material::setVec3(const std::string& name, float x, float y, float z)
 	glUniform3f(getLocation(name), x, y, z);
 }
 
+void Material::setVec4(const std::string& name, float x, float y, float z, float w)
+{
+	use();
+	glUniform4f(getLocation(name), x, y, z, w);
+}
+
 void Material::setInt(const std::string& name, int value)
 {
 	use();

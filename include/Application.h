@@ -38,6 +38,7 @@ public:
 	const Camera& camera() const;
 	Input& input();
 	const Input& input() const;
+	
 
 	void onFramebufferSize(GLFWwindow* window, int width, int height);
 	void onKey(GLFWwindow* window, int key, int scancode, int action, int mods);

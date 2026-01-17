@@ -51,6 +51,11 @@ namespace math
 	inline Vec3 mul(const Vec3& v, float s) { return Vec3{v.x * s, v.y * s, v.z * s}; }
 	inline Vec3 div(const Vec3& v, float s) { return Vec3{v.x / s, v.y / s, v.z / s}; }
 
+	inline Vec4 add(const Vec4& a, const Vec4& b) { return Vec4{a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w}; }
+	inline Vec4 sub(const Vec4& a, const Vec4& b) { return Vec4{a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w}; }
+	inline Vec4 mul(const Vec4& v, float s) { return Vec4{v.x * s, v.y * s, v.z * s, v.w * s}; }
+	inline Vec4 div(const Vec4& v, float s) { return Vec4{v.x / s, v.y / s, v.z / s, v.w / s}; }
+
 	inline float dot(const Vec3& a, const Vec3& b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
 	inline Vec3 cross(const Vec3& a, const Vec3& b)

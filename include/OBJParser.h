@@ -5,30 +5,31 @@
 #include <vector>
 #include <cstdint>
 #include <unordered_map>
+#include "Math3D.h"
 
-struct Vec2 {
-    float x, y;
-};
+// struct Vec2 {
+//     float x, y;
+// };
 
-struct Vec3 {
-    float x, y, z;
-};
+// struct Vec3 {
+//     float x, y, z;
+// };
 
 struct Pixel {
     int r, g, b;
 };
 
 struct Vertex {
-    Vec3 position;
-    Vec3 normal;
-    Vec2 uv;
+    math::Vec3 position;
+    math::Vec3 normal;
+    math::Vec2 uv;
 };
 
 struct MTLMaterial {
     std::string name;
-    Vec3 Ka{0.0f, 0.0f, 0.0f};
-    Vec3 Kd{0.8f, 0.8f, 0.8f};
-    Vec3 Ks{0.0f, 0.0f, 0.0f};
+    math::Vec3 Ka{0.0f, 0.0f, 0.0f};
+    math::Vec3 Kd{0.8f, 0.8f, 0.8f};
+    math::Vec3 Ks{0.0f, 0.0f, 0.0f};
     float Ns{0.0f};
     float d{1.0f};
     int illum{0};
@@ -50,25 +51,25 @@ public:
     const std::unordered_map<std::string, MTLMaterial>& getMaterials() const { return m_materials; }
     const std::string& getActiveMaterialName() const { return m_activeMaterial; }
     const MTLMaterial* getResolvedActiveMaterial() const;
-    bool tryGetActiveDiffuse(Vec3& outKd) const;
-    const Vec3& getBoundsMin() const { return m_boundsMin; }
-    const Vec3& getBoundsMax() const { return m_boundsMax; }
+    bool tryGetActiveDiffuse(math::Vec3& outKd) const;
+    const math::Vec3& getBoundsMin() const { return m_boundsMin; }
+    const math::Vec3& getBoundsMax() const { return m_boundsMax; }
     bool hasUVs() const { return m_hasUVs; }
 
     void clear();
 
 private:
     // Données brutes OBJ
-    std::vector<Vec3> m_positions;
-    std::vector<Vec3> m_normals;
-    std::vector<Vec2> m_uvs;
+    std::vector<math::Vec3> m_positions;
+    std::vector<math::Vec3> m_normals;
+    std::vector<math::Vec2> m_uvs;
 
 	// Matériaux (.mtl)
 	std::unordered_map<std::string, MTLMaterial> m_materials;
 	std::string m_activeMaterial;
 	std::string m_firstUsedMaterial;
-    Vec3 m_boundsMin{0.0f, 0.0f, 0.0f};
-    Vec3 m_boundsMax{0.0f, 0.0f, 0.0f};
+    math::Vec3 m_boundsMin{0.0f, 0.0f, 0.0f};
+    math::Vec3 m_boundsMax{0.0f, 0.0f, 0.0f};
     bool m_hasUVs{false};
 
     //PPM parser pour les textures
