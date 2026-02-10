@@ -4,6 +4,7 @@
 #include <glad/glad.h>
 #include "VBO.h"
 
+// Vertex Array Object
 class VAO
 {
     public:

@@ -3,6 +3,7 @@
 
 #include <glad/glad.h>
 
+// Element Buffer Object
 class EBO
 {
     public:

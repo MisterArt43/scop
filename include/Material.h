@@ -10,7 +10,7 @@
 class Material
 {
 	public:
-		explicit Material(Shader& shader);
+		Material(Shader& shader);
 
 		void use();
 
