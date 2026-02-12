@@ -7,7 +7,11 @@ use crate::{shader::Shader, vao::VAO, vbo::VBO};
 
 pub mod vbo;
 pub mod vao;
+pub mod ebo;
 pub mod shader;
+pub mod mesh;
+pub mod material;
+pub mod texture;
 
 
 fn main() {

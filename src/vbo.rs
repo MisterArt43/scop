@@ -1,13 +1,15 @@
 
 use gl::{self, ARRAY_BUFFER, BindBuffer, BufferData, DeleteBuffers, GenBuffers, STATIC_DRAW, types::GLuint};
 
+use crate::mesh::Vertex;
+
 #[derive(Default)]
 pub struct VBO {
     id: GLuint
 }
 
 impl VBO {
-    pub fn new(vertices: &Vec<[f32; 3]>, size: isize) -> VBO {
+    pub fn new(vertices: &Vec<Vertex>, size: isize) -> VBO {
         // initialize vbo with ID undefined
         let mut vbo =VBO::default();
 

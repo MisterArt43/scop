@@ -1,11 +1,8 @@
 use anyhow::{Result, anyhow};
-use std::{fs::read, ptr::null_mut};
+use std::{ffi::{CStr, CString}, fs::read, ptr::null_mut};
 
 use gl::{
-    AttachShader, COMPILE_STATUS, CompileShader, CreateProgram, CreateShader, DeleteProgram,
-    DeleteShader, FALSE, FRAGMENT_SHADER, GetProgramInfoLog, GetProgramiv, GetShaderInfoLog,
-    GetShaderiv, LINK_STATUS, LinkProgram, ShaderSource, UseProgram, VERTEX_SHADER,
-    types::{GLint, GLuint},
+    AttachShader, COMPILE_STATUS, CompileShader, CreateProgram, CreateShader, DeleteProgram, DeleteShader, FALSE, FRAGMENT_SHADER, GetProgramInfoLog, GetProgramiv, GetShaderInfoLog, GetShaderiv, GetUniformLocation, LINK_STATUS, LinkProgram, ShaderSource, Uniform1f, Uniform1i, Uniform2fv, Uniform3fv, Uniform4fv, UniformMatrix4fv, UseProgram, VERTEX_SHADER, types::{self, GLint, GLuint}
 };
 
 #[derive(Default)]
@@ -92,4 +89,50 @@ impl Shader {
             },
         }
     }
+
+    pub fn set_uniform_int(&self, name: &str, value: types::GLint) {
+        unsafe {
+            let location = GetUniformLocation(self.id, str_to_cstring(name).as_ptr());
+            Uniform1i(location, value);
+        }
+    }
+
+    pub fn set_uniform_float(&self, name: &str, value: types::GLfloat) {
+        unsafe {
+            let location = GetUniformLocation(self.id, str_to_cstring(name).as_ptr());
+            Uniform1f(location, value);
+        }
+    }
+
+    pub fn set_uniform_vec2(&self, name: &str, value: &[types::GLfloat; 2]) {
+        unsafe {
+            let location = GetUniformLocation(self.id, str_to_cstring(name).as_ptr());
+            Uniform2fv(location, 1, value.as_ptr());
+        }
+    }
+
+    pub fn set_uniform_vec3(&self, name: &str, value: &[types::GLfloat; 3]) {
+        unsafe {
+            let location = GetUniformLocation(self.id, str_to_cstring(name).as_ptr());
+            Uniform3fv(location, 1, value.as_ptr());
+        }
+    }
+
+    pub fn set_uniform_vec4(&self, name: &str, value: &[types::GLfloat; 4]) {
+        unsafe {
+            let location = GetUniformLocation(self.id, str_to_cstring(name).as_ptr());
+            Uniform4fv(location, 1, value.as_ptr());
+        }
+    }
+
+    pub fn set_uniform_mat4(&self, name: &str, value: &[types::GLfloat; 16]) {
+        unsafe {
+            let location = GetUniformLocation(self.id, str_to_cstring(name).as_ptr());
+            UniformMatrix4fv(location, 1, gl::FALSE, value.as_ptr());
+        }
+    }
+}
+
+fn str_to_cstring(str:&str) -> CString {
+    CString::new(str).expect("Failed to convert uniform name to CString")
 }
