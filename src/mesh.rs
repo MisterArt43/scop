@@ -1,6 +1,6 @@
-use std::mem::offset_of;
+use std::{mem::offset_of, ptr::null};
 
-use gl::FLOAT;
+use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
 
 use crate::{ebo::EBO, vao::VAO, vbo::VBO};
 
@@ -12,9 +12,9 @@ pub struct Mesh {
 }
 
 pub struct Vertex {
-    position: [f32; 3],
-    normal: [f32; 3],
-    uv: [f32; 2],
+    pub(crate) position: [f32; 3],
+    pub(crate) normal: [f32; 3],
+    pub(crate) uv: [f32; 2],
 }
 
 impl Mesh {
@@ -31,8 +31,9 @@ impl Mesh {
             index_count: indices.len(),
         };
         mesh.vao.bind();
+        mesh.ebo.bind();
 
-        mesh.vao.link_attrib(&mesh.vbo, 0, 3, FLOAT, size_of::<Vertex>() as i32, 0);
+        mesh.vao.link_attrib(&mesh.vbo, 0, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, position));
         mesh.vao.link_attrib(&mesh.vbo, 1, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, normal));
         mesh.vao.link_attrib(&mesh.vbo, 2, 2, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, uv));
         
@@ -52,6 +53,13 @@ impl Mesh {
 
     pub fn get_index_count(&self) -> usize {
         self.index_count
+    }
+
+    pub fn draw(&self) {
+        self.vao.bind();
+        unsafe {
+            DrawElements(TRIANGLES, self.index_count as i32, UNSIGNED_INT, null());
+        }
     }
 
     pub fn delete(&self) {

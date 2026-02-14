@@ -1,5 +1,5 @@
 use anyhow::{Result, anyhow};
-use std::{ffi::{CStr, CString}, fs::read, ptr::null_mut};
+use std::{ffi::{CString}, fs::read, ptr::null_mut};
 
 use gl::{
     AttachShader, COMPILE_STATUS, CompileShader, CreateProgram, CreateShader, DeleteProgram, DeleteShader, FALSE, FRAGMENT_SHADER, GetProgramInfoLog, GetProgramiv, GetShaderInfoLog, GetShaderiv, GetUniformLocation, LINK_STATUS, LinkProgram, ShaderSource, Uniform1f, Uniform1i, Uniform2fv, Uniform3fv, Uniform4fv, UniformMatrix4fv, UseProgram, VERTEX_SHADER, types::{self, GLint, GLuint}
