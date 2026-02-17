@@ -25,6 +25,7 @@ impl Shader {
             CompileShader(vert_shader);
             Shader::compile_error(vert_shader, "VERTEX")?;
 
+
             let frag_shader = CreateShader(FRAGMENT_SHADER);
 
             let f_ptr = fragment_str.as_ptr() as *const i8;
@@ -33,6 +34,7 @@ impl Shader {
             CompileShader(frag_shader);
             Shader::compile_error(frag_shader, "FRAGMENT")?;
 
+            
             shader.id = CreateProgram();
             AttachShader(shader.id, vert_shader);
             AttachShader(shader.id, frag_shader);
