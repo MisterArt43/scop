@@ -1,7 +1,3 @@
-use gl::{ClearDepth, DEPTH_TEST, DepthFunc, Disable, Enable};
-use gl_loader::init_gl;
-use glfw::{self, Context, WindowHint};
-
 use crate::{application::Application, mesh::Vertex, shader::Shader};
 
 pub mod application;
@@ -31,10 +27,6 @@ fn main() {
             uv: [1.0, 0.0],
         },
     ]);
-
-    /*[[-0.5, 0.0, -0.5],
-    [0.0, 0.5, 0.0],
-    [0.5, 0.0, -0.5]].to_vec();*/
 
     /*
      * Step 1 creation de la fenetre (glfw) et
@@ -72,3 +64,4 @@ fn main() {
         app.handle_events();
     }
 }
+

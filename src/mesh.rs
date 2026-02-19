@@ -1,4 +1,4 @@
-use std::{mem::offset_of, ptr::null};
+use std::{fs::{self, read_to_string}, iter::Skip, mem::{offset_of, swap}, ptr::null, str::SplitWhitespace};
 
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
 
@@ -60,6 +60,74 @@ impl Mesh {
         unsafe {
             DrawElements(TRIANGLES, self.index_count as i32, UNSIGNED_INT, null());
         }
+    }
+
+    pub fn load_from_obj(path: &str) -> Mesh {
+        let obj_file: String = fs::read_to_string(path)
+        .expect("Failed to read .obj file");
+
+        let mut vertices: Vec<Vertex> = Vec::new();
+        let mut indices: Vec<u32> = Vec::new();
+
+        let mut vertex_positions: Vec<[f32; 3]> = Vec::new();
+        let mut vertex_normals: Vec<[f32; 3]> = Vec::new();
+        let mut vertex_uvs: Vec<[f32; 2]> = Vec::new();
+
+        for line in  obj_file.lines() {
+            match line.split_whitespace().next() {
+                Some("v") => {
+                    let mut parts = line.split_whitespace().skip(1);
+                    vertex_positions.push(Self::parse_vec3(&mut parts));
+                },
+                Some("vn") => {
+                    let mut parts = line.split_whitespace().skip(1);
+                    vertex_normals.push(Self::parse_vec3(&mut parts));
+                },
+                Some("vt") => {
+                    let mut parts = line.split_whitespace().skip(1);
+                    vertex_uvs.push(Self::parse_vec2(&mut parts));
+                },
+                Some("f") => {
+                    // TODO/notabene pour plus tard pcq flemme
+                    // * Pour le parsing de f il y a plusieurs formats : 
+                    // * vIndex/vtIndex/vnIndex
+                    // * ou vIndex//vnIndex (pas d’uv)
+                    // * ou vIndex/vtIndex (pas de normal)
+                    // * ou vIndex (juste position)
+                    
+                    // face (indices)
+                },
+                _ => {},
+            }
+        }
+
+        // TODO : parser le .obj et charger les vertices et indices dans les buffers
+        Mesh::new(&Vec::new(), &Vec::new())
+    }
+
+    fn parse_vec3(parts: &mut Skip<SplitWhitespace<'_>>) -> [f32; 3] {
+        [
+            parts.next()
+                .and_then(|s| s.parse::<f32>().ok())
+                .unwrap_or(0.0),
+            parts.next()
+                .and_then(|s| s.parse::<f32>().ok())
+                .unwrap_or(0.0),
+            parts.next()
+                .and_then(|s| s.parse::<f32>().ok())
+                .unwrap_or(0.0),
+        ]
+    }
+
+    fn parse_vec2(parts: &mut Skip<SplitWhitespace<'_>>) -> [f32; 2] {
+        [
+            parts.next()
+                .and_then(|s| s.parse::<f32>().ok())
+                .unwrap_or(0.0),
+            parts.next()
+                .and_then(|s| s.parse::<f32>().ok())
+                .unwrap_or(0.0),
+        ]
     }
 
     pub fn delete(&self) {
