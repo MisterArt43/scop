@@ -1,4 +1,4 @@
-use std::{fs::{self}, iter::Skip, mem::{offset_of}, ptr::null, str::SplitWhitespace};
+use std::{collections::HashMap, fs::{self}, iter::Skip, mem::offset_of, ptr::null, str::SplitWhitespace};
 
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
 
@@ -73,6 +73,8 @@ impl Mesh {
         let mut vertex_normals: Vec<[f32; 3]> = Vec::new();
         let mut vertex_uvs: Vec<[f32; 2]> = Vec::new();
 
+        let mut ebo_map: HashMap<(i32, Option<i32>, Option<i32>), (i32, Option<i32>, Option<i32>)> = HashMap::new();
+
         for line in  obj_file.lines() {
             match line.split_whitespace().next() {
                 Some("v") => {
@@ -97,11 +99,14 @@ impl Mesh {
 
                     //il faut pouvoir parser n-gones car f peut contenir de 3 a n vertices
                     
-                    let mut parts = line
+                    let parts = line
                         .split_whitespace()
                         .skip(1); // on découpe par vertice + skip le "f" du début
-                    for mut part in parts {
+                    for part in parts {
                         let (v, vt, vn) = Self::parse_face(part);
+                        if !ebo_map.contains_key(& (v, vt, vn)) {
+                            ebo_map.insert((v, vt, vn), (v, vt, vn));
+                        }
                     }
                     // face (indices)
                 },
