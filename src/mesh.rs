@@ -1,4 +1,4 @@
-use std::{fs::{self, read_to_string}, iter::Skip, mem::{offset_of, swap}, ptr::null, str::SplitWhitespace};
+use std::{fs::{self}, iter::Skip, mem::{offset_of}, ptr::null, str::SplitWhitespace};
 
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
 
@@ -89,12 +89,20 @@ impl Mesh {
                 },
                 Some("f") => {
                     // TODO/notabene pour plus tard pcq flemme
-                    // * Pour le parsing de f il y a plusieurs formats : 
-                    // * vIndex/vtIndex/vnIndex
-                    // * ou vIndex//vnIndex (pas d’uv)
-                    // * ou vIndex/vtIndex (pas de normal)
-                    // * ou vIndex (juste position)
+                    // Pour le parsing de f il y a plusieurs formats : 
+                    // vIndex/vtIndex/vnIndex
+                    // ou vIndex//vnIndex (pas d’uv)
+                    // ou vIndex/vtIndex (pas de normal)
+                    // ou vIndex (juste position)
+
+                    //il faut pouvoir parser n-gones car f peut contenir de 3 a n vertices
                     
+                    let mut parts = line
+                        .split_whitespace()
+                        .skip(1); // on découpe par vertice + skip le "f" du début
+                    for mut part in parts {
+                        let (v, vt, vn) = Self::parse_face(part);
+                    }
                     // face (indices)
                 },
                 _ => {},
@@ -103,6 +111,32 @@ impl Mesh {
 
         // TODO : parser le .obj et charger les vertices et indices dans les buffers
         Mesh::new(&Vec::new(), &Vec::new())
+    }
+
+    fn parse_face(token: &str) -> (i32, Option<i32>, Option<i32>) {
+
+        
+        let mut it = token.split('/');
+        let v = it
+            .next()
+            .and_then(|s| s.parse::<i32>().ok())
+            .expect("Failed to parse vertex index");
+
+        let vt = it
+            .next()
+            .and_then(|s| {
+                if s.is_empty() { None } 
+                else { s.parse::<i32>().ok() }
+            });
+        
+        let vn = it
+            .next()
+            .and_then(|s| {
+                if s.is_empty() { None }
+                else { s.parse::<i32>().ok() }
+            });
+
+        (v, vt, vn)
     }
 
     fn parse_vec3(parts: &mut Skip<SplitWhitespace<'_>>) -> [f32; 3] {
