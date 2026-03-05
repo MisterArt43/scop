@@ -2,6 +2,8 @@ use gl::{ClearDepth, DEPTH_TEST, DepthFunc, Disable, Enable};
 use gl_loader::init_gl;
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent, WindowHint};
 
+use crate::Camera::Camera;
+
 pub struct Application {
     glfw: Glfw,
     pub(crate) window: PWindow,
@@ -12,6 +14,7 @@ pub struct Application {
 
     name: String,
     curpos: (f32, f32),
+    pub(crate) camera: Camera,
 }
 
 impl Application {
@@ -41,6 +44,7 @@ impl Application {
             height,
             name: String::from(name),
             curpos: (0.0, 0.0),
+            camera: Camera::new(),
         };
         app.window.set_key_polling(true);
         app.window.make_current();

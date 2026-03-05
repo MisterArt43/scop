@@ -1,3 +1,5 @@
+use gl::Viewport;
+
 use crate::{application::Application, shader::Shader};
 
 pub mod application;
@@ -53,6 +55,15 @@ fn main() {
             submesh.mesh.draw();
         }
         app.swap_buffers();
+        
+        app.camera.updateBasicRot();
+        let (fb_width, fb_height) = app.window.get_framebuffer_size();
+        unsafe {
+            Viewport(0, 0, fb_width, fb_height);
+        }
+        
+        // if fb_height > 0 // ??? a voir si utile (aspect ratio)
+        //     app.camera.set_aspect_ratio(fb_width as f32 / fb_height as f32);
 
         app.handle_events();
     }
