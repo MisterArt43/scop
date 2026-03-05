@@ -2,8 +2,10 @@ use gl::{ClearDepth, DEPTH_TEST, DepthFunc, Disable, Enable};
 use gl_loader::init_gl;
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent, WindowHint};
 
-use crate::Camera::Camera;
+use crate::camera::Camera;
 
+// ignore unused for now
+#[allow(unused)]
 pub struct Application {
     glfw: Glfw,
     pub(crate) window: PWindow,

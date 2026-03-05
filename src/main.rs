@@ -12,7 +12,6 @@ pub mod vao;
 pub mod vbo;
 pub mod math;
 pub mod camera;
-pub(crate) mod Camera;
 
 fn main() {
     
@@ -56,7 +55,7 @@ fn main() {
         }
         app.swap_buffers();
         
-        app.camera.updateBasicRot();
+        app.camera.update_basic_rot();
         let (fb_width, fb_height) = app.window.get_framebuffer_size();
         unsafe {
             Viewport(0, 0, fb_width, fb_height);
