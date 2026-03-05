@@ -1,20 +1,64 @@
-use std::{collections::HashMap, fs::{self}, iter::Skip, mem::offset_of, ptr::null, str::SplitWhitespace};
-
+use std::{collections::HashMap, fs::{self}, iter::Skip, mem::offset_of, ptr::null, str::SplitWhitespace, usize};
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
-
 use crate::{ebo::EBO, vao::VAO, vbo::VBO};
 
 pub struct Mesh {
     vao: VAO,
     vbo: VBO,
     ebo: EBO,
+
     index_count: usize,
+}
+
+pub struct SubMesh {
+    pub object: String,
+    pub group: String,
+    pub material: String,
+    pub mesh: Mesh,
 }
 
 pub struct Vertex {
     pub(crate) position: [f32; 3],
     pub(crate) normal: [f32; 3],
     pub(crate) uv: [f32; 2],
+    pub(crate) color: [f32; 3],
+}
+
+struct Builder {
+    vertices: Vec<Vertex>,
+    indices: Vec<u32>,
+    map: HashMap<VertexKey, u32>,
+    object: String,
+    group: String,
+    material: String,
+}
+
+impl Builder {
+    fn clear(&mut self) {
+        self.vertices.clear();
+        self.indices.clear();
+        self.map.clear();
+        self.object = String::from("default");
+        self.group = String::from("default");
+        self.material = String::from("default");
+    }
+
+    fn is_empty(&self) -> bool {
+        self.indices.is_empty()
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct ObjIndex {
+    v: i32,              // index position
+    vt: Option<i32>,     // index uv
+    vn: Option<i32>,     // index normal
+}
+#[derive(PartialEq, Eq, Hash)]
+struct VertexKey {
+    v: usize,              // index position
+    vt: Option<usize>,     // index uv
+    vn: Option<usize>,     // index normal
 }
 
 impl Mesh {
@@ -36,7 +80,8 @@ impl Mesh {
         mesh.vao.link_attrib(&mesh.vbo, 0, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, position));
         mesh.vao.link_attrib(&mesh.vbo, 1, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, normal));
         mesh.vao.link_attrib(&mesh.vbo, 2, 2, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, uv));
-        
+        mesh.vao.link_attrib(&mesh.vbo, 3, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, color));
+
         mesh.vao.unbind();
         mesh.vbo.unbind();
         mesh.ebo.unbind();
@@ -62,24 +107,34 @@ impl Mesh {
         }
     }
 
-    pub fn load_from_obj(path: &str) -> Mesh {
+    pub fn from_obj(path: &str) -> Result<Vec<SubMesh>, String> {
         let obj_file: String = fs::read_to_string(path)
-        .expect("Failed to read .obj file");
+            .map_err(|e| format!("Failed to read .obj file: {}", e))?;
 
-        let mut vertices: Vec<Vertex> = Vec::new();
-        let mut indices: Vec<u32> = Vec::new();
+        let mut builder = Builder {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+            map: HashMap::new(),
+            object: String::from("default"),
+            group: String::from("default"),
+            material: String::from("default"),
+        }; // le builder sera a flush par o/g/usemtl afin de gérer plusieurs mat/grp d'un même .obj
 
         let mut vertex_positions: Vec<[f32; 3]> = Vec::new();
         let mut vertex_normals: Vec<[f32; 3]> = Vec::new();
         let mut vertex_uvs: Vec<[f32; 2]> = Vec::new();
 
-        let mut ebo_map: HashMap<(i32, Option<i32>, Option<i32>), (i32, Option<i32>, Option<i32>)> = HashMap::new();
+        let mut vertex_color = Vec::<Option<[f32; 3]>>::new();
+
+        let mut meshes: Vec<SubMesh> = Vec::new(); // pour stocker les meshes d'un même .obj (o/g/usemtl)
 
         for line in  obj_file.lines() {
             match line.split_whitespace().next() {
                 Some("v") => {
                     let mut parts = line.split_whitespace().skip(1);
-                    vertex_positions.push(Self::parse_vec3(&mut parts));
+                    let (position, color) = Self::parse_v(&mut parts);
+                    vertex_positions.push(position);
+                    vertex_color.push(color);
                 },
                 Some("vn") => {
                     let mut parts = line.split_whitespace().skip(1);
@@ -90,38 +145,123 @@ impl Mesh {
                     vertex_uvs.push(Self::parse_vec2(&mut parts));
                 },
                 Some("f") => {
-                    // TODO/notabene pour plus tard pcq flemme
                     // Pour le parsing de f il y a plusieurs formats : 
                     // vIndex/vtIndex/vnIndex
-                    // ou vIndex//vnIndex (pas d’uv)
-                    // ou vIndex/vtIndex (pas de normal)
-                    // ou vIndex (juste position)
+                    // vIndex//vnIndex (pas d’uv)
+                    // vIndex/vtIndex (pas de normal)
+                    // vIndex (juste position)
 
                     //il faut pouvoir parser n-gones car f peut contenir de 3 a n vertices
+
+                    let mut face_indices: Vec<u32> = Vec::new();
                     
                     let parts = line
                         .split_whitespace()
-                        .skip(1); // on découpe par vertice + skip le "f" du début
+                        .skip(1); // découpe par vertice + skip le "f" du début
                     for part in parts {
-                        let (v, vt, vn) = Self::parse_face(part);
-                        if !ebo_map.contains_key(& (v, vt, vn)) {
-                            ebo_map.insert((v, vt, vn), (v, vt, vn));
+                        // parsing de f pour choper les index et les résoudre car le format est 1-based (ca peut etre neg)
+                        let key = Self::parse_face(part);
+                        let key = VertexKey {
+                            v: Self::resolve_vertex_index(key.v, vertex_positions.len()),
+                            vt: key.vt.map(|i| Self::resolve_vertex_index(i, vertex_uvs.len())),
+                            vn: key.vn.map(|i| Self::resolve_vertex_index(i, vertex_normals.len())),
+                        };
+
+                        // récupérer l'index si le vertex existe déjà ou sinon j'en créer un nouveau
+                        let idx: u32 = if let Some(&existing_idx) = builder.map.get(&key) {
+                            existing_idx
+                        } else {
+                            // recréer le vertex avec les index de f c/vt/vn
+                            let vertex = Vertex {
+                                position: vertex_positions[key.v],
+                                normal: key.vn.map_or([0.0; 3], |vn_idx| vertex_normals[vn_idx]),
+                                uv: key.vt.map_or([0.0; 2], |vt_idx| vertex_uvs[vt_idx]),
+                                color: vertex_color[key.v].unwrap_or([1.0; 3]),
+                            };
+                            // push le vertex dans le builder ! ET ! push l'index dans la map pour évité doublons
+                            builder.vertices.push(vertex);
+                            let idx = builder.vertices.len() as u32 - 1;
+                            builder.map.insert(key, idx);
+
+                            idx
+                        };
+                        // la face a ensuite un index pour chaque vertice de la face
+                        face_indices.push(idx);
+                    }
+
+                    //une fois le for fini et qu'on a bien tout parsé, faut trianguler si la face a plus ou eg 3 vertices (ngone)
+                    if face_indices.len() >= 3 {
+                        let v0 = face_indices[0]; // tout les triangles d'un n-gone partent du premier vertex de la face
+                        for i in 1..(face_indices.len() - 1) {
+                            builder.indices.push(v0);
+                            builder.indices.push(face_indices[i]);
+                            builder.indices.push(face_indices[i + 1]);
                         }
                     }
-                    // face (indices)
+                    else {
+                        print!("Face with less than 3 vertices found in .obj file, skipping: {}", line);
+                    }
                 },
-                _ => {},
+                Some("o") => {
+                    Self::flush_builder_if_needed(&mut builder, &mut meshes); // flush le builder avant de commencer un nouveau mesh
+                    builder.object = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                },
+                Some("g") => {
+                    Self::flush_builder_if_needed(&mut builder, &mut meshes); // flush le builder avant de commencer un nouveau mesh
+                    builder.group = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                },
+                Some("usemtl") => {
+                    Self::flush_builder_if_needed(&mut builder, &mut meshes); // flush le builder avant de commencer un nouveau mesh
+                    builder.material = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                },
+                Some("#") => {
+                    // pr éviter les print! dans les log
+                },
+                _ => {
+                    print!("Unknown line in .obj file: {}", line);
+                },
             }
         }
 
+        Self::flush_builder_if_needed(&mut builder, &mut meshes); // Flush Final
+
         // TODO : parser le .obj et charger les vertices et indices dans les buffers
-        Mesh::new(&Vec::new(), &Vec::new())
+        Ok(meshes)
     }
 
-    fn parse_face(token: &str) -> (i32, Option<i32>, Option<i32>) {
+    fn flush_builder_if_needed(builder: &mut Builder, meshes: &mut Vec<SubMesh>) {
+        if !builder.is_empty() {
+            let mesh = SubMesh {
+                object: builder.object.clone(),
+                group: builder.group.clone(),
+                material: builder.material.clone(),
+                mesh: Mesh::new(&builder.vertices, &builder.indices),
+            };
+            meshes.push(mesh);
 
-        
+            builder.clear();
+        }
+    }
+
+    fn resolve_vertex_index(obj_index: i32, len: usize) -> usize {
+        let len_i32 = len as i32;
+
+        let obj_index = if obj_index < 0 {
+            len_i32 + obj_index
+        } else {
+            obj_index - 1
+        };
+
+        if obj_index < 0 || obj_index >= len_i32 {
+            panic!("Vertex index out of bounds: {}, len: {}", obj_index, len);
+        }
+
+        obj_index as usize
+    }
+
+    fn parse_face(token: &str) -> ObjIndex {        
         let mut it = token.split('/');
+
         let v = it
             .next()
             .and_then(|s| s.parse::<i32>().ok())
@@ -141,7 +281,19 @@ impl Mesh {
                 else { s.parse::<i32>().ok() }
             });
 
-        (v, vt, vn)
+        ObjIndex { v: v, vt: vt, vn: vn }
+    }
+
+    fn parse_v(token: &mut Skip<SplitWhitespace<'_>>) -> ([f32; 3], Option<[f32; 3]>) {
+        let position = Self::parse_vec3(token);
+
+        let after: Vec<f32> = token.filter_map(|f| f.parse::<f32>().ok()).collect();
+        let color = if after.len() >= 3 {
+            Some([after[after.len() - 3], after[after.len() - 2], after[after.len() - 1]])
+        } else {
+            None
+        };
+        (position, color)
     }
 
     fn parse_vec3(parts: &mut Skip<SplitWhitespace<'_>>) -> [f32; 3] {

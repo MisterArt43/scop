@@ -5,13 +5,15 @@ use crate::mesh::Vertex;
 
 #[derive(Default)]
 pub struct VBO {
-    id: GLuint
+    id: GLuint,
+    has_color: bool,
 }
 
 impl VBO {
     pub fn new(vertices: &Vec<Vertex>, size: isize) -> VBO {
         // initialize vbo with ID undefined
         let mut vbo =VBO::default();
+        vbo.has_color = vertices.iter().any(|v| v.color != [0.0; 3]);
 
         unsafe {
             GenBuffers(1, &mut vbo.id);
@@ -19,6 +21,10 @@ impl VBO {
             BufferData(ARRAY_BUFFER, size, vertices.as_ptr() as *const _, STATIC_DRAW);
         }
         vbo
+    }
+
+    pub fn has_color(&self) -> bool {
+        self.has_color
     }
 
     pub fn bind(&self) {

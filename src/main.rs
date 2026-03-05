@@ -1,4 +1,4 @@
-use crate::{application::Application, mesh::Vertex, shader::Shader};
+use crate::{application::Application, shader::Shader};
 
 pub mod application;
 pub mod ebo;
@@ -8,26 +8,12 @@ pub mod shader;
 pub mod texture;
 pub mod vao;
 pub mod vbo;
+pub mod math;
+pub mod camera;
+pub(crate) mod Camera;
 
 fn main() {
-    let vert: Vec<Vertex> = Vec::from([
-        Vertex {
-            position: [-0.9, -0.9, -0.9],
-            normal: [1.0, 0.0, 0.0],
-            uv: [0.0, 0.0],
-        },
-        Vertex {
-            position: [0.0, 0.9, 0.0],
-            normal: [0.0, 0.0, 1.0],
-            uv: [0.5, 1.0],
-        },
-        Vertex {
-            position: [0.9, -0.9, -0.9],
-            normal: [0.0, 1.0, 0.0],
-            uv: [1.0, 0.0],
-        },
-    ]);
-
+    
     /*
      * Step 1 creation de la fenetre (glfw) et
      * du contexte pour opengl (gl_loader / gl)
@@ -49,8 +35,13 @@ fn main() {
      * VAO : Vertex Array Object, buffer qui stocke les configurations des attributs de vertex (en gros on definit l'ordre et les types des variables passées en buffer)
      * EBO : Element Buffer Object, buffer qui stocke les indices des vertices pour le dessin du mesh (permet de reutiliser les vertices voisin et d'eviter les duplications))
      */
-    let indices: Vec<u32> = vec![0, 1, 2];
-    let mesh = mesh::Mesh::new(&vert, &indices);
+
+    let mut args: Vec<String> = std::env::args().collect();
+    if args.len() < 2 {
+        args.push(String::from("./ressources/42.obj"));
+    }
+
+    let obj_data = mesh::Mesh::from_obj(&args[1]).expect("Failed to load mesh");
 
     while !app.window.should_close() {
         unsafe {
@@ -58,10 +49,17 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-        mesh.draw();
+        for submesh in &obj_data {
+            submesh.mesh.draw();
+        }
         app.swap_buffers();
 
         app.handle_events();
+    }
+
+    for submesh in &obj_data {
+        submesh.mesh.delete();
+
     }
 }
 
