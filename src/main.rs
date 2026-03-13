@@ -1,3 +1,5 @@
+use std::ffi::CString;
+
 use gl::Viewport;
 
 use crate::{application::Application, shader::Shader};
@@ -12,6 +14,7 @@ pub mod vao;
 pub mod vbo;
 pub mod math;
 pub mod camera;
+
 
 fn main() {
     
@@ -55,21 +58,22 @@ fn main() {
         }
         app.swap_buffers();
         
+        let location = unsafe { gl::GetUniformLocation(shader.id, CString::new("aspect_ratio").unwrap().as_ptr()) };
         app.camera.update_basic_rot();
         let (fb_width, fb_height) = app.window.get_framebuffer_size();
         unsafe {
             Viewport(0, 0, fb_width, fb_height);
         }
-        
-        // if fb_height > 0 // ??? a voir si utile (aspect ratio)
-        //     app.camera.set_aspect_ratio(fb_width as f32 / fb_height as f32);
+
+        if fb_height > 0 {
+            app.camera.set_aspect_ratio(fb_width as f32 / fb_height as f32);
+        }
 
         app.handle_events();
     }
 
     for submesh in &obj_data {
         submesh.mesh.delete();
-
     }
 }
 

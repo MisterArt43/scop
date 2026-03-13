@@ -7,7 +7,7 @@ use gl::{
 
 #[derive(Default)]
 pub struct Shader {
-    id: GLuint,
+    pub id: GLuint,
 }
 
 impl Shader {

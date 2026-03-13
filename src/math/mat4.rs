@@ -2,7 +2,7 @@ use crate::math::vec3::Vec3;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Mat4 {
-    data: [[f32; 4]; 4],
+    pub(crate) data: [[f32; 4]; 4],
 }
 
 impl Mat4 {
@@ -82,5 +82,9 @@ impl Mat4 {
                 [-left.dot(&eye), -up.dot(&eye), forward.dot(&eye), 1.0],
             ],
         }
+    }
+
+    pub fn as_ptr(&self) -> *const f32 {
+        self.data.as_ptr() as *const f32
     }
 }
