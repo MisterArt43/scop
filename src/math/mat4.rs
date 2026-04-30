@@ -69,22 +69,48 @@ impl Mat4 {
     }
 
     // https://www.songho.ca/opengl/gl_camera.html
-    pub fn look_at(eye: Vec3, target: Vec3, up_dir: Vec3) -> Mat4 {
-        let forward = eye.sub(&target).normalize();
-        let left = up_dir.cross(&forward).normalize();
-        let up = forward.cross(&left);
+    pub fn look_at(eye: Vec3, target: Vec3, up: Vec3) -> Mat4 {
+        let f = target.sub(&eye).normalize();
+        let s = f.cross(&up).normalize();
+        let u = s.cross(&f);
 
         Mat4 {
             data: [
-                [left.x, up.x, -forward.x, 0.0],
-                [left.y, up.y, -forward.y, 0.0],
-                [left.z, up.z, -forward.z, 0.0],
-                [-left.dot(&eye), -up.dot(&eye), forward.dot(&eye), 1.0],
-            ],
+                [s.x, u.x, -f.x, 0.0],
+                [s.y, u.y, -f.y, 0.0],
+                [s.z, u.z, -f.z, 0.0],
+                [-s.dot(&eye), -u.dot(&eye), f.dot(&eye), 1.0],
+            ]
         }
     }
 
     pub fn as_ptr(&self) -> *const f32 {
         self.data.as_ptr() as *const f32
+    }
+
+    pub fn to_flat_array(&self) -> [f32; 16] {
+        // Store as-is (row-major) - OpenGL will interpret as column-major
+        // because we use GL_FALSE in glUniformMatrix4fv
+        let mut out = [0.0f32; 16];
+        for i in 0..4 {
+            for j in 0..4 {
+                out[i * 4 + j] = self.data[i][j];
+            }
+        }
+        out
+    }
+
+    pub fn perspective(fov_deg: f32, aspect: f32, near: f32, far: f32) -> Mat4 {
+        let fov_rad = fov_deg.to_radians();
+        let f = 1.0 / (fov_rad / 2.0).tan();
+        let nf = 1.0 / (near - far);
+
+        let mut m = Mat4::new();
+        m.data[0][0] = f / aspect;
+        m.data[1][1] = f;
+        m.data[2][2] = (far + near) * nf;
+        m.data[2][3] = -1.0;
+        m.data[3][2] = 2.0 * far * near * nf;
+        m
     }
 }
