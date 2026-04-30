@@ -15,7 +15,7 @@ pub struct Application {
     height: f32,
 
     name: String,
-    curpos: (f32, f32),
+    pub curpos: (f32, f32),
     pub(crate) camera: Camera,
 }
 
@@ -77,8 +77,23 @@ impl Application {
     }
 
     pub fn handle_events(&mut self) {
-        if let Some((_id, _event)) = self.events.receive() {
-            // TODO, gerer Events de glfw ici
+        // iterate over all pending events
+        // poll GLFW to populate the event queue, then iterate over all pending events
+        self.glfw.poll_events();
+        for (_id, event) in glfw::flush_messages(&self.events) {
+            println!("Event: {:?}", event);
+            match event {
+                WindowEvent::Close => self.window.set_should_close(true),
+                WindowEvent::Key(key, _scancode, action, _mods) => {
+                    if key == glfw::Key::Escape && action == glfw::Action::Press {
+                        self.window.set_should_close(true);
+                    }
+                }
+                WindowEvent::CursorPos(xpos, ypos) => {
+                    self.curpos = (xpos as f32, ypos as f32);
+                }
+                _ => {}
+            }
         }
     }
 }
