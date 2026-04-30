@@ -3,11 +3,14 @@ use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
 use crate::{ebo::EBO, vao::VAO, vbo::VBO};
 
 pub struct Mesh {
-    vao: VAO,
-    vbo: VBO,
-    ebo: EBO,
+    pub vao: VAO,
+    pub vbo: VBO,
+    pub ebo: EBO,
 
-    index_count: usize,
+    pub nb_vertices: usize,
+    pub index_count: usize,
+    pub bbox_min: [f32; 3],
+    pub bbox_max: [f32; 3],
 }
 
 pub struct SubMesh {
@@ -63,6 +66,20 @@ struct VertexKey {
 
 impl Mesh {
     pub fn new(vertices: &Vec<Vertex>, indices: &Vec<u32>) -> Mesh {
+        // compute bbox from vertex positions
+        let mut bbox_min = [std::f32::INFINITY; 3];
+        let mut bbox_max = [std::f32::NEG_INFINITY; 3];
+        for v in vertices {
+            for i in 0..3 {
+                if v.position[i] < bbox_min[i] {
+                    bbox_min[i] = v.position[i];
+                }
+                if v.position[i] > bbox_max[i] {
+                    bbox_max[i] = v.position[i];
+                }
+            }
+        }
+
         let mesh = Mesh {
             vao: VAO::new(),
             vbo: VBO::new(vertices,
@@ -72,7 +89,10 @@ impl Mesh {
                 indices,
                 (indices.len() * std::mem::size_of::<u32>()) as isize,
             ),
+            nb_vertices: vertices.len(),
             index_count: indices.len(),
+            bbox_min,
+            bbox_max,
         };
         mesh.vao.bind();
         mesh.ebo.bind();
@@ -172,11 +192,16 @@ impl Mesh {
                             existing_idx
                         } else {
                             // recréer le vertex avec les index de f c/vt/vn
+                            let mut color = vertex_color[key.v].unwrap_or([1.0; 3]);
+                            // If color is black (0,0,0), use white instead as default
+                            if color[0] == 0.0 && color[1] == 0.0 && color[2] == 0.0 {
+                                color = [1.0; 3];
+                            }
                             let vertex = Vertex {
                                 position: vertex_positions[key.v],
                                 normal: key.vn.map_or([0.0; 3], |vn_idx| vertex_normals[vn_idx]),
                                 uv: key.vt.map_or([0.0; 2], |vt_idx| vertex_uvs[vt_idx]),
-                                color: vertex_color[key.v].unwrap_or([1.0; 3]),
+                                color,
                             };
                             // push le vertex dans le builder ! ET ! push l'index dans la map pour évité doublons
                             builder.vertices.push(vertex);
@@ -287,9 +312,15 @@ impl Mesh {
     fn parse_v(token: &mut Skip<SplitWhitespace<'_>>) -> ([f32; 3], Option<[f32; 3]>) {
         let position = Self::parse_vec3(token);
 
-        let after: Vec<f32> = token.filter_map(|f| f.parse::<f32>().ok()).collect();
-        let color = if after.len() >= 3 {
-            Some([after[after.len() - 3], after[after.len() - 2], after[after.len() - 1]])
+        // Try to parse color from the next 3 values (if they exist)
+        let color = [
+            token.next().and_then(|s| s.parse::<f32>().ok()),
+            token.next().and_then(|s| s.parse::<f32>().ok()),
+            token.next().and_then(|s| s.parse::<f32>().ok()),
+        ];
+        
+        let color = if color.iter().all(|c| c.is_some()) {
+            Some([color[0].unwrap(), color[1].unwrap(), color[2].unwrap()])
         } else {
             None
         };
