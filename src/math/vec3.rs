@@ -69,4 +69,12 @@ impl Vec3 {
     pub fn dot(&self, other: &Vec3) -> f32 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
+
+    pub fn mul_scalar(&self, scalar: f32) -> Vec3 {
+        Vec3 {
+            x: self.x * scalar,
+            y: self.y * scalar,
+            z: self.z * scalar,
+        }
+    }
 }
