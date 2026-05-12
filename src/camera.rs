@@ -7,13 +7,13 @@ use crate::{camera, math::{mat4::Mat4, vec3::Vec3}, mesh::SubMesh};
 #[allow(unused)]
 pub struct Camera {
     position: Vec3,
-    orientation: Vec3,
+    pub orientation: Vec3,
     field_of_view: f32,
     pub move_speed: f32,
     pub model: Mat4,
     pub view: Mat4,
     pub projection: Mat4,
-    camera_distance: f32,
+    pub camera_distance: f32,
 }
 
 impl Camera {
@@ -54,8 +54,38 @@ impl Camera {
         self.model.data[3][1] = -center.y * scale_factor;
         self.model.data[3][2] = -center.z * scale_factor;
 
-        let camera_distance = diag * scale_factor / 1.5;
+        let camera_distance = diag * scale_factor / 1.3;
         self.camera_distance = camera_distance;
+    }
+
+    pub fn rotate_pitch(&mut self, angle: f32) {
+        self.orientation.x += angle;
+    }
+
+    pub fn rotate_yaw(&mut self, angle: f32) {
+        self.orientation.y += angle;
+    }
+
+    pub fn rotate_roll(&mut self, angle: f32) {
+        self.orientation.z += angle;
+    }
+
+    pub fn move_forward(&mut self, distance: f32) {
+        let forward = Vec3 {
+            x: self.orientation.y.cos() * self.orientation.x.cos(),
+            y: self.orientation.x.sin(),
+            z: self.orientation.y.sin() * self.orientation.x.cos(),
+        };
+        self.position = self.position.add(&forward.mul_scalar(distance));
+    }
+
+    pub fn move_right(&mut self, distance: f32) {
+        let right = Vec3 {
+            x: self.orientation.y.cos() * (self.orientation.x + std::f32::consts::FRAC_PI_2).cos(),
+            y: (self.orientation.x + std::f32::consts::FRAC_PI_2).sin(),
+            z: self.orientation.y.sin() * (self.orientation.x + std::f32::consts::FRAC_PI_2).cos(),
+        };
+        self.position = self.position.add(&right.mul_scalar(distance));
     }
 
     pub fn update_view_and_projection(&mut self, fb_width: f32, fb_height: f32) {
@@ -63,12 +93,19 @@ impl Camera {
         self.projection = Mat4::perspective(self.field_of_view, aspec, 0.1, 500.0);;
 
         // let angle = 0.0 as f32;//unsafe { glfwGetTime() as f32 }; //temp
-        let angle = unsafe { glfwGetTime() as f32 }; //temp
-        let eye_x = angle.cos() * self.camera_distance; //temp
-        let eye_z = angle.sin() * self.camera_distance; //temp
-        let eye = Vec3 { x: eye_x, y: 0.0, z: eye_z }; //temp
+        // let angle = unsafe { glfwGetTime() as f32 }; //temp
+        // let eye_x = angle.cos() * self.camera_distance; //temp
+        // let eye_z = angle.sin() * self.camera_distance; //temp
+        // let eye = Vec3 { x: eye_x, y: 0.0, z: eye_z }; //temp
 
-        self.view = Mat4::look_at(eye, Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0));
+        let eye = Vec3 {
+            x: self.camera_distance * self.orientation.y.cos() * self.orientation.x.cos(),
+            y: self.camera_distance * self.orientation.x.sin(),
+            z: self.camera_distance * self.orientation.y.sin() * self.orientation.x.cos(),
+        };
+
+
+        self.view = Mat4::look_at(eye, Vec3 { x: 0.0, y: 0.0, z: 0.0 }, Vec3::new(0.0, 1.0, 0.0));
          
         
         // let camera_target = Vec3::new(0.0, 0.0, 0.0);

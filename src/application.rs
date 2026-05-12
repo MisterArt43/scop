@@ -1,8 +1,9 @@
-use gl::{ClearDepth, DEPTH_TEST, DepthFunc, Disable, Enable};
+use gl::{CULL_FACE, ClearDepth, DEPTH_TEST, DepthFunc, Disable, Enable};
 use gl_loader::init_gl;
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent, WindowHint};
+use std::collections::HashSet;
 
-use crate::camera::Camera;
+use crate::camera::{self, Camera};
 
 // ignore unused for now
 #[allow(unused)]
@@ -10,7 +11,7 @@ pub struct Application {
     glfw: Glfw,
     pub(crate) window: PWindow,
     events: GlfwReceiver<(f64, WindowEvent)>,
-
+    pressed_keys: HashSet<glfw::Key>,
     width: f32,
     height: f32,
 
@@ -47,6 +48,7 @@ impl Application {
             name: String::from(name),
             curpos: (0.0, 0.0),
             camera: Camera::new(),
+            pressed_keys: HashSet::new(),
         };
         app.window.set_key_polling(true);
         app.window.make_current();
@@ -85,6 +87,30 @@ impl Application {
             match event {
                 WindowEvent::Close => self.window.set_should_close(true),
                 WindowEvent::Key(key, _scancode, action, _mods) => {
+                    if action == glfw::Action::Press {
+                        self.pressed_keys.insert(key);
+                    } else if action == glfw::Action::Release {
+                        self.pressed_keys.remove(&key);
+                    }
+                    if key == glfw::Key::LeftAlt {
+                        unsafe {
+                            if action == glfw::Action::Release {
+                                gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+                            } else if action == glfw::Action::Press {
+                                gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
+                            }
+                        }
+                    }
+                    if key == glfw::Key::LeftShift {
+                        unsafe {
+                            if action == glfw::Action::Release {
+                                gl::Enable(CULL_FACE);
+                            } else if action == glfw::Action::Press {
+                                gl::Disable(CULL_FACE);
+                            }
+                        }
+                    }
+                    
                     if key == glfw::Key::Escape && action == glfw::Action::Press {
                         self.window.set_should_close(true);
                     }
@@ -95,6 +121,24 @@ impl Application {
                 _ => {}
             }
         }
+        self.update();
+    }
+
+    pub fn update (&mut self) {
+        // pr gerer les inputs pr la cam
+        let move_speed = 0.1; // Adjust as needed
+        let rotation_speed = 0.02; // Adjust as needed
+        let zoom_speed = 0.01; // Adjust as needed
+        if self.pressed_keys.contains(&glfw::Key::W) {      self.camera.move_forward(move_speed); }
+        if self.pressed_keys.contains(&glfw::Key::S) {      self.camera.move_forward(-move_speed); }
+        if self.pressed_keys.contains(&glfw::Key::A) {      self.camera.move_right(-move_speed); }
+        if self.pressed_keys.contains(&glfw::Key::D) {      self.camera.move_right(move_speed); }
+        if self.pressed_keys.contains(&glfw::Key::Up) {     self.camera.orientation.x += rotation_speed; }
+        if self.pressed_keys.contains(&glfw::Key::Down) {   self.camera.orientation.x -= rotation_speed; }
+        if self.pressed_keys.contains(&glfw::Key::Left) {   self.camera.orientation.y -= rotation_speed; }
+        if self.pressed_keys.contains(&glfw::Key::Right) {  self.camera.orientation.y += rotation_speed; }
+        if self.pressed_keys.contains(&glfw::Key::KpAdd) { self.camera.camera_distance -= zoom_speed; if self.camera.camera_distance < 0.1 { self.camera.camera_distance = 0.1; } }
+        if self.pressed_keys.contains(&glfw::Key::KpSubtract) { self.camera.camera_distance += zoom_speed; if self.camera.camera_distance > 100.0 { self.camera.camera_distance = 100.0; } }
     }
 }
 

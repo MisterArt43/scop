@@ -28,10 +28,10 @@ fn main() {
     /*
      * Step 2 creation du shader (read --> compile --> link a CG)
      */
-    // let vert_file = "./shader/funny.vert";
-    // let frag_file = "./shader/funny.frag";
-    let vert_file = "./shader/basic.vert";
-    let frag_file = "./shader/basic.frag";
+    let vert_file = "./shader/funny.vert";
+    let frag_file = "./shader/funny.frag";
+    // let vert_file = "./shader/basic.vert";
+    // let frag_file = "./shader/basic.frag";
     let shader = Shader::new(
         vert_file, 
         frag_file
@@ -59,6 +59,11 @@ fn main() {
     
     shader.set_uniform_mat4("model", &app.camera.model.to_flat_array());
 
+    unsafe {
+        gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
+        gl::Enable(CULL_FACE);
+    }
+
     // compute camera distance after scaling so big objects don't push the camera too far
 
     while !app.window.should_close() {
@@ -72,7 +77,7 @@ fn main() {
             shader.set_uniform_mat4("view", &app.camera.view.to_flat_array());
         }
 
-        /*
+        // /*
         //temp shadertoy setter
         unsafe {
             // Pour iTime
@@ -88,23 +93,18 @@ fn main() {
             gl::Uniform4f(iMouse_loc, app.curpos.0, app.curpos.1, 0.0, 0.0);
         }
         // end temp
-        */
+        // */
 
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-            gl::Enable(CULL_FACE);
+            
         }
 
         for submesh in &obj_data {
             submesh.mesh.draw();
         }
 
-        unsafe {
-            gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-            // CULL_FACE
-        }
         app.swap_buffers();
         unsafe {
             Viewport(0, 0, fb_width, fb_height);
