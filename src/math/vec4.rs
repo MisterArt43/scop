@@ -1,3 +1,5 @@
+use std::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
+
 #[derive(Debug, Clone, Copy)]
 pub struct Vec4 {
     x: f32,
@@ -71,5 +73,41 @@ impl Vec4 {
 
     pub fn dot(&self, other: &Vec4) -> f32 {
         self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
+    }
+}
+
+impl AddAssign for Vec4 {
+    fn add_assign(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
+        self.z += other.z;
+        self.w += other.w;
+    }
+}
+
+impl SubAssign for Vec4 {
+    fn sub_assign(&mut self, other: Self) {
+        self.x -= other.x;
+        self.y -= other.y;
+        self.z -= other.z;
+        self.w -= other.w;
+    }
+}
+
+impl DivAssign<f32> for Vec4 {
+    fn div_assign(&mut self, scalar: f32) {
+        self.x /= scalar;
+        self.y /= scalar;
+        self.z /= scalar;
+        self.w /= scalar;
+    }
+}
+
+impl MulAssign<f32> for Vec4 {
+    fn mul_assign(&mut self, scalar: f32) {
+        self.x *= scalar;
+        self.y *= scalar;
+        self.z *= scalar;
+        self.w *= scalar;
     }
 }

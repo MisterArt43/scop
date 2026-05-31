@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Copy)]
+use std::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
+
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Vec3 {
     pub x: f32,
     pub y: f32,
@@ -31,6 +33,13 @@ impl Vec3 {
             x: self.x * scalar,
             y: self.y * scalar,
             z: self.z * scalar,
+        }
+    }
+    pub fn mul_vec(&self, other: &Vec3) -> Vec3 {
+        Vec3 {
+            x: self.x * other.x,
+            y: self.y * other.y,
+            z: self.z * other.z,
         }
     }
 
@@ -77,4 +86,60 @@ impl Vec3 {
             z: self.z * scalar,
         }
     }
+
+    pub fn forward(&self) -> Vec3 {
+        Vec3 {
+            x: self.y.cos() * self.x.cos(),
+            y: self.x.sin(),
+            z: self.y.sin() * self.x.cos(),
+        }
+    }
+
+    pub fn right(&self) -> Vec3 {
+        Vec3 {
+            x: self.y.cos() * (self.x + std::f32::consts::FRAC_PI_2).cos(),
+            y: (self.x + std::f32::consts::FRAC_PI_2).sin(),
+            z: self.y.sin() * (self.x + std::f32::consts::FRAC_PI_2).cos(),
+        }
+    }
+
+    pub fn up(&self) -> Vec3 {
+        self.forward().cross(&self.right())
+    }
 }
+
+impl AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        self.x += other.x;
+        self.y += other.y;
+        self.z += other.z;
+    }
+}
+
+impl SubAssign for Vec3 {
+    fn sub_assign(&mut self, other: Self) {
+        self.x -= other.x;
+        self.y -= other.y;
+        self.z -= other.z;
+    }
+}
+
+impl DivAssign<f32> for Vec3 {
+    fn div_assign(&mut self, scalar: f32) {
+        self.x /= scalar;
+        self.y /= scalar;
+        self.z /= scalar;
+    }
+}
+
+impl MulAssign<f32> for Vec3 {
+    fn mul_assign(&mut self, scalar: f32) {
+        self.x *= scalar;
+        self.y *= scalar;
+        self.z *= scalar;
+    }
+}
+
+pub const FORWARD: Vec3 = Vec3 { x: 0.0, y: 0.0, z: -1.0 };
+pub const RIGHT: Vec3 = Vec3 { x: 1.0, y: 0.0, z: 0.0 };
+pub const UP: Vec3 = Vec3 { x: 0.0, y: 1.0, z: 0.0 };
