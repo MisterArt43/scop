@@ -28,10 +28,10 @@ fn main() {
     /*
      * Step 2 creation du shader (read --> compile --> link a CG)
      */
-    let vert_file = "./shader/funny.vert";
-    let frag_file = "./shader/funny.frag";
-    // let vert_file = "./shader/basic.vert";
-    // let frag_file = "./shader/basic.frag";
+    // let vert_file = "./shader/funny.vert";
+    // let frag_file = "./shader/funny.frag";
+    let vert_file = "./shader/basic.vert";
+    let frag_file = "./shader/basic.frag";
     let shader = Shader::new(
         vert_file, 
         frag_file
@@ -67,6 +67,7 @@ fn main() {
     // compute camera distance after scaling so big objects don't push the camera too far
 
     while !app.window.should_close() {
+        app.update_delta_time();
         let (fb_width, fb_height) = app.window.get_framebuffer_size();
         
         // Set up matrices BEFORE rendering
