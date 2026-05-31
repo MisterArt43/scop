@@ -3,7 +3,7 @@ use gl_loader::init_gl;
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent, WindowHint};
 use std::collections::HashSet;
 
-use crate::camera::{self, Camera};
+use crate::camera::{Camera};
 
 // ignore unused for now
 #[allow(unused)]

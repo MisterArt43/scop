@@ -1,9 +1,8 @@
 use gl::{CULL_FACE, Viewport};
+#[allow(unused_imports)]
 use glfw::ffi::glfwGetTime;
 
 use crate::{application::Application, shader::Shader};
-use crate::math::mat4::Mat4;
-use crate::math::vec3::Vec3;
 
 pub mod application;
 pub mod ebo;
@@ -78,7 +77,7 @@ fn main() {
             shader.set_uniform_mat4("view", &app.camera.view.to_flat_array());
         }
 
-        // /*
+        /*
         //temp shadertoy setter
         unsafe {
             // Pour iTime
@@ -94,7 +93,7 @@ fn main() {
             gl::Uniform4f(iMouse_loc, app.curpos.0, app.curpos.1, 0.0, 0.0);
         }
         // end temp
-        // */
+        */
 
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
