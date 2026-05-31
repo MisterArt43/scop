@@ -1,6 +1,4 @@
 use gl::{CULL_FACE, Viewport};
-#[allow(unused_imports)]
-use glfw::ffi::glfwGetTime;
 
 use crate::{application::Application, shader::Shader};
 
@@ -27,10 +25,17 @@ fn main() {
     /*
      * Step 2 creation du shader (read --> compile --> link a CG)
      */
-    // let vert_file = "./shader/funny.vert";
-    // let frag_file = "./shader/funny.frag";
-    let vert_file = "./shader/basic.vert";
-    let frag_file = "./shader/basic.frag";
+    let is_funny = true;
+    let vert_file;
+    let frag_file;
+    if is_funny{
+        vert_file = "./shader/funny.vert";
+        frag_file = "./shader/funny.frag";
+    }
+    else {
+        vert_file = "./shader/basic.vert";
+        frag_file = "./shader/basic.frag";
+    }
     let shader = Shader::new(
         vert_file, 
         frag_file
@@ -77,23 +82,25 @@ fn main() {
             shader.set_uniform_mat4("view", &app.camera.view.to_flat_array());
         }
 
-        /*
+        // /*
         //temp shadertoy setter
-        unsafe {
-            // Pour iTime
-            let iTime_loc = gl::GetUniformLocation(shader.id, "iTime\0".as_ptr() as *const i8);
-            gl::Uniform1f(iTime_loc, glfwGetTime() as f32);
-    
-            // Pour iResolution
-            let iResolution_loc = gl::GetUniformLocation(shader.id, "iResolution\0".as_ptr() as *const i8);
-            gl::Uniform3f(iResolution_loc, fb_width as f32, fb_height as f32, 1.0);
-    
-            // Pour iMouse
-            let iMouse_loc = gl::GetUniformLocation(shader.id, "iMouse\0".as_ptr() as *const i8);
-            gl::Uniform4f(iMouse_loc, app.curpos.0, app.curpos.1, 0.0, 0.0);
+        if is_funny {
+            unsafe {
+                // Pour iTime
+                let i_time_loc = gl::GetUniformLocation(shader.id, "iTime\0".as_ptr() as *const i8);
+                gl::Uniform1f(i_time_loc, app.last_frame_time);
+        
+                // Pour iResolution
+                let i_resolution_loc = gl::GetUniformLocation(shader.id, "iResolution\0".as_ptr() as *const i8);
+                gl::Uniform3f(i_resolution_loc, fb_width as f32, fb_height as f32, 1.0);
+        
+                // Pour iMouse
+                let i_mouse_loc = gl::GetUniformLocation(shader.id, "iMouse\0".as_ptr() as *const i8);
+                gl::Uniform4f(i_mouse_loc, app.curpos.0, app.curpos.1, 0.0, 0.0);
+            }
         }
         // end temp
-        */
+        // */
 
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);

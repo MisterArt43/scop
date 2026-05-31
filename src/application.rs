@@ -15,7 +15,7 @@ pub struct Application {
     width: f32,
     height: f32,
     delta_time: f32,
-    last_frame_time: f32,
+    pub last_frame_time: f32,
 
     name: String,
     pub curpos: (f32, f32),
