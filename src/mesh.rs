@@ -32,6 +32,7 @@ pub struct Mtl {
     pub index_of_refraction: Option<f32>, // Ni
     pub alpha: Option<f32>, // d or Tr
     pub specular_texture: Option<String>, // map_Km
+    pub illumination_model: Option<u32>, // illum
 }
 
 pub struct Vertex {
@@ -319,6 +320,7 @@ impl Mesh {
                         index_of_refraction: None,
                         alpha: None,
                         specular_texture: None,
+                        illumination_model: None,
                     });
                 },
                 Some("Ka") => {
@@ -383,6 +385,14 @@ impl Mesh {
                     if let Some(mat) = &mut current_material {
                         let texture_path = line.split_once(' ').map(|(_, path)| path.trim().to_string()).unwrap_or_else(|| "default".to_string());
                         mat.specular_texture = Some(texture_path);
+                    }
+                },
+                Some("illum") => {
+                    // illumination model
+                    if let Some(mat) = &mut current_material {
+                        let mut parts = line.split_whitespace().skip(1);
+                        let illum_model = parts.next().and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
+                        mat.illumination_model = Some(illum_model);
                     }
                 },
                 Some("#") => {
