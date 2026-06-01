@@ -124,6 +124,11 @@ impl Application {
                             }
                         }
                     }
+
+                    if key == glfw::Key::C && action == glfw::Action::Press {
+                        self.camera.mode = (self.camera.mode + 1) % 2;
+                        println!("Camera mode: {}", if self.camera.mode == 0 { "Free" } else { "Look-At" });
+                    }
                     
                     if key == glfw::Key::Escape && action == glfw::Action::Press {
                         self.window.set_should_close(true);
@@ -155,7 +160,7 @@ impl Application {
         if self.pressed_keys.contains(&glfw::Key::Right) {  self.camera.transform.rotation.rotate_yaw(rotation_speed); }
         if self.pressed_keys.contains(&glfw::Key::KpAdd) { self.camera.camera_distance -= zoom_speed; if self.camera.camera_distance < 0.1 { self.camera.camera_distance = 0.1; } }
         if self.pressed_keys.contains(&glfw::Key::KpSubtract) { self.camera.camera_distance += zoom_speed; if self.camera.camera_distance > 100.0 { self.camera.camera_distance = 100.0; } }
-        if self.pressed_keys.contains(&glfw::Key::C) { self.camera.mode = (self.camera.mode + 1) % 2; println!("Camera mode: {}", if self.camera.mode == 0 { "Free" } else { "Look-At" }); }
+        // if self.pressed_keys.contains(&glfw::Key::C) { self.camera.mode = (self.camera.mode + 1) % 2; println!("Camera mode: {}", if self.camera.mode == 0 { "Free" } else { "Look-At" }); }
     }
 }
 
