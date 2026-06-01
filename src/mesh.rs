@@ -17,7 +17,21 @@ pub struct SubMesh {
     pub object: String,
     pub group: String,
     pub material: String,
+    pub material_data: Option<Mtl>,
     pub mesh: Mesh,
+}
+
+#[derive(Clone, Debug)]
+pub struct Mtl {
+    pub name: String, // name of the material
+    pub ambient_color: [f32; 3], // Ka
+    pub diffuse_color: [f32; 3], // Kd
+    pub specular_color: [f32; 3], // Ks
+    pub shininess: f32, // Ns
+    pub diffuse_texture: Option<String>, // map_Kd
+    pub index_of_refraction: Option<f32>, // Ni
+    pub alpha: Option<f32>, // d or Tr
+    pub specular_texture: Option<String>, // map_Km
 }
 
 pub struct Vertex {
@@ -34,6 +48,7 @@ struct Builder {
     object: String,
     group: String,
     material: String,
+    material_data: Option<Mtl>,
 }
 
 impl Builder {
@@ -44,6 +59,7 @@ impl Builder {
         self.object = String::from("default");
         self.group = String::from("default");
         self.material = String::from("default");
+        self.material_data = None;
     }
 
     fn is_empty(&self) -> bool {
@@ -131,6 +147,7 @@ impl Mesh {
         let obj_file: String = fs::read_to_string(path)
             .map_err(|e| format!("Failed to read .obj file: {}", e))?;
 
+        let mut mtl_data_map: HashMap<String, Mtl> = HashMap::new(); // pour stocker les données des matériaux parsés depuis les .mtl (clé : nom du matériau)
         let mut builder = Builder {
             vertices: Vec::new(),
             indices: Vec::new(),
@@ -138,6 +155,7 @@ impl Mesh {
             object: String::from("default"),
             group: String::from("default"),
             material: String::from("default"),
+            material_data: None,
         }; // le builder sera a flush par o/g/usemtl afin de gérer plusieurs mat/grp d'un même .obj
 
         let mut vertex_positions: Vec<[f32; 3]> = Vec::new();
@@ -224,7 +242,7 @@ impl Mesh {
                         }
                     }
                     else {
-                        print!("Face with less than 3 vertices found in .obj file, skipping: {}", line);
+                        println!("Face with less than 3 vertices found in .obj file, skipping: {}", line);
                     }
                 },
                 Some("o") => {
@@ -235,15 +253,33 @@ impl Mesh {
                     Self::flush_builder_if_needed(&mut builder, &mut meshes); // flush le builder avant de commencer un nouveau mesh
                     builder.group = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
                 },
+                Some("mtllib") => {
+                    let mtl_path = line.split_once(' ').map(|(_, path)| path.trim()).unwrap_or("default.mtl");
+                    println!("try to parse mtl file at path {}", mtl_path);
+                    
+                    if let Ok(materials) = Self::parse_mtl(mtl_path, path) {
+                        for (name, mtl) in materials {
+                            mtl_data_map.insert(name, mtl);
+                        }
+                    }
+                },
                 Some("usemtl") => {
                     Self::flush_builder_if_needed(&mut builder, &mut meshes); // flush le builder avant de commencer un nouveau mesh
+
+                    
                     builder.material = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                    println!("try to parse mtl for material : {}", builder.material);
+                    builder.material_data = Self::match_mtl(&builder.material, &mtl_data_map).cloned();
+
+                    // println!("Material data for {}: {:?}", builder.material, builder.material_data);
                 },
                 Some("#") => {
                     // pr éviter les print! dans les log
                 },
                 _ => {
-                    print!("Unknown line in .obj file: {}", line);
+                    if !line.trim().is_empty() {
+                        println!("Unknown line in .obj file: {}", line);
+                    }
                 },
             }
         }
@@ -254,6 +290,118 @@ impl Mesh {
         Ok(meshes)
     }
 
+    fn match_mtl<'a>(name: &str, mtl_data_map: &'a HashMap<String, Mtl>) -> Option<&'a Mtl> {
+        mtl_data_map.get(name)
+    }
+
+    fn parse_mtl(path: &str, obj_path: &str) -> Result<HashMap<String, Mtl>, String> {
+        let obj_dir = std::path::Path::new(obj_path).parent().unwrap_or(std::path::Path::new("./"));
+        let mtl_path = obj_dir.join(path);
+        let mtl_file: String = fs::read_to_string(&mtl_path)
+            .map_err(|e| format!("Failed to read .mtl file: {}", e))?;
+
+        let mut materials: HashMap<String, Mtl> = HashMap::new();
+        let mut current_material: Option<Mtl> = None;
+        mtl_file.lines().for_each(|line| {
+            match line.split_whitespace().next() {
+                Some("newmtl") => {
+                    if let Some(mat) = current_material.take() {
+                        materials.insert(mat.name.clone(), mat);
+                    }
+                    let name = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                    current_material = Some(Mtl {
+                        name,
+                        ambient_color: [0.0; 3],
+                        diffuse_color: [0.0; 3],
+                        specular_color: [0.0; 3],
+                        shininess: 0.0,
+                        diffuse_texture: None,
+                        index_of_refraction: None,
+                        alpha: None,
+                        specular_texture: None,
+                    });
+                },
+                Some("Ka") => {
+                    // ambient color
+                    if let Some(mat) = &mut current_material {
+                        let mut parts = line.split_whitespace().skip(1);
+                        mat.ambient_color = Self::parse_vec3(&mut parts);
+                    }
+                    
+                },
+                Some("Kd") => {
+                    // diffuse color
+                    if let Some(mat) = &mut current_material {
+                        let mut parts = line.split_whitespace().skip(1);
+                        mat.diffuse_color = Self::parse_vec3(&mut parts);
+                    }
+                },
+                Some("Ks") => {
+                    // specular color
+                    if let Some(mat) = &mut current_material {
+                        let mut parts = line.split_whitespace().skip(1);
+                        mat.specular_color = Self::parse_vec3(&mut parts);
+                    }
+                },
+                Some("Ns") => {
+                    // shininess
+                    if let Some(mat) = &mut current_material {
+                        let mut parts = line.split_whitespace().skip(1);
+                        mat.shininess = parts.next().and_then(|s| s.parse::<f32>().ok()).unwrap_or(0.0);
+                    }
+                },
+                Some("map_Kd") => {
+                    // diffuse texture
+                    if let Some(mat) = &mut current_material {
+                        let texture_path = line.split_once(' ').map(|(_, path)| path.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                        mat.diffuse_texture = Some(texture_path);
+                    }
+                },
+                Some("Ni") => {
+                    // index of refraction
+                    if let Some(mat) = &mut current_material {
+                        let mut parts = line.split_whitespace().skip(1);
+                        mat.index_of_refraction = parts.next().and_then(|s| s.parse::<f32>().ok());
+                    }
+                },
+                Some("d") => {
+                    // alpha (transparency)
+                    if let Some(mat) = &mut current_material {
+                        let mut parts = line.split_whitespace().skip(1);
+                        mat.alpha = parts.next().and_then(|s| s.parse::<f32>().ok());
+                    }
+                },
+                Some("Tr") => {
+                    // transparency
+                    if let Some(mat) = &mut current_material {
+                        let mut parts = line.split_whitespace().skip(1);
+                        mat.alpha = parts.next().and_then(|s| s.parse::<f32>().ok());
+                    }
+                },
+                Some("map_Ks") | Some("map_Km") | Some("Km") => {
+                    // specular texture
+                    if let Some(mat) = &mut current_material {
+                        let texture_path = line.split_once(' ').map(|(_, path)| path.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                        mat.specular_texture = Some(texture_path);
+                    }
+                },
+                Some("#") => {
+                    // comment, ignore
+                },
+                _ => {
+                    if !line.trim().is_empty() {
+                        println!("Unknown line in .mtl file: {}", line);
+                    }
+                },
+            }
+        });
+        if let Some(mat) = current_material.take() {
+            materials.insert(mat.name.clone(), mat);
+        }
+        println!("Parsed {} materials from .mtl file", materials.len());
+        Ok(materials)
+    }
+
     fn flush_builder_if_needed(builder: &mut Builder, meshes: &mut Vec<SubMesh>) {
         if !builder.is_empty() {
             let mesh = SubMesh {
@@ -261,6 +409,7 @@ impl Mesh {
                 group: builder.group.clone(),
                 material: builder.material.clone(),
                 mesh: Mesh::new(&builder.vertices, &builder.indices),
+                material_data: builder.material_data.clone(),
             };
             meshes.push(mesh);
 

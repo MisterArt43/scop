@@ -25,7 +25,7 @@ fn main() {
     /*
      * Step 2 creation du shader (read --> compile --> link a CG)
      */
-    let is_funny = true;
+    let is_funny = false;
     let vert_file;
     let frag_file;
     if is_funny{
@@ -109,6 +109,17 @@ fn main() {
         }
 
         for submesh in &obj_data {
+            if let Some(mtl) = &submesh.material_data {
+                shader.set_uniform_vec3(
+                    "materialDiffuse",
+                    &mtl.diffuse_color
+                );
+            } else {
+                shader.set_uniform_vec3(
+                    "materialDiffuse",
+                    &[1.0, 1.0, 1.0]
+                );
+            }
             submesh.mesh.draw();
         }
 
