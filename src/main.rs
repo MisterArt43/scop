@@ -3,19 +3,17 @@ use gl::{CULL_FACE, Viewport};
 use crate::{application::Application, shader::Shader};
 
 pub mod application;
+pub mod camera;
 pub mod ebo;
 pub mod material;
+pub mod math;
 pub mod mesh;
 pub mod shader;
 pub mod texture;
 pub mod vao;
 pub mod vbo;
-pub mod math;
-pub mod camera;
-
 
 fn main() {
-    
     /*
      * Step 1 creation de la fenetre (glfw) et
      * du contexte pour opengl (gl_loader / gl)
@@ -28,18 +26,14 @@ fn main() {
     let is_funny = false;
     let vert_file;
     let frag_file;
-    if is_funny{
+    if is_funny {
         vert_file = "./shader/funny.vert";
         frag_file = "./shader/funny.frag";
-    }
-    else {
+    } else {
         vert_file = "./shader/basic.vert";
         frag_file = "./shader/basic.frag";
     }
-    let shader = Shader::new(
-        vert_file, 
-        frag_file
-    ).expect("Failed to load Shader files");
+    let shader = Shader::new(vert_file, frag_file).expect("Failed to load Shader files");
     // applique le shader (active le shader pour que les uniform(variables) et les textures soient pris en compte)
     shader.activate();
 
@@ -56,11 +50,25 @@ fn main() {
         args.push(String::from("./ressources/42.obj"));
     }
 
-    let obj_data = mesh::Mesh::from_obj(&args[1]).expect("Failed to load mesh");
-    println!("\nMesh loaded with {} vertices and {} faces", obj_data.iter().map(|submesh| submesh.mesh.nb_vertices).sum::<usize>(), obj_data.iter().map(|submesh| submesh.mesh.index_count).sum::<usize>());
+    let mut obj_data = mesh::Mesh::from_obj(&args[1]).expect("Failed to load mesh");
+    obj_data.push(
+        mesh::Mesh::from_obj("./ressources/42.obj").expect("Failed to load material data")[0]
+            .clone(),
+    );
+    println!(
+        "\nMesh loaded with {} vertices and {} faces",
+        obj_data
+            .iter()
+            .map(|submesh| submesh.mesh.nb_vertices)
+            .sum::<usize>(),
+        obj_data
+            .iter()
+            .map(|submesh| submesh.mesh.index_count)
+            .sum::<usize>()
+    );
 
     app.camera.init_view(&obj_data);
-    
+
     shader.set_uniform_mat4("model", &app.camera.model.to_flat_array());
 
     unsafe {
@@ -73,13 +81,18 @@ fn main() {
     while !app.window.should_close() {
         app.update_delta_time();
         let (fb_width, fb_height) = app.window.get_framebuffer_size();
-        
+
         // Set up matrices BEFORE rendering
         if fb_height > 0 {
-            app.camera.update_view_and_projection(fb_width as f32, fb_height as f32);
+            app.camera
+                .update_view_and_projection(fb_width as f32, fb_height as f32);
 
             shader.set_uniform_mat4("projection", &app.camera.projection.to_flat_array());
             shader.set_uniform_mat4("view", &app.camera.view.to_flat_array());
+
+            shader.set_uniform_vec3("lightPos", &obj_data[0].mesh.bbox_max); // positionne la lumière à l'opposé de la position de la caméra pour un meilleur éclairage
+            shader.set_uniform_vec3("viewPos", &app.camera.transform.position.to_array());
+            shader.set_uniform_vec3("lightColor", &[1.0, 0.5, 1.0]);
         }
 
         // /*
@@ -89,36 +102,34 @@ fn main() {
                 // Pour iTime
                 let i_time_loc = gl::GetUniformLocation(shader.id, "iTime\0".as_ptr() as *const i8);
                 gl::Uniform1f(i_time_loc, app.last_frame_time);
-        
+
                 // Pour iResolution
-                let i_resolution_loc = gl::GetUniformLocation(shader.id, "iResolution\0".as_ptr() as *const i8);
+                let i_resolution_loc =
+                    gl::GetUniformLocation(shader.id, "iResolution\0".as_ptr() as *const i8);
                 gl::Uniform3f(i_resolution_loc, fb_width as f32, fb_height as f32, 1.0);
-        
+
                 // Pour iMouse
-                let i_mouse_loc = gl::GetUniformLocation(shader.id, "iMouse\0".as_ptr() as *const i8);
+                let i_mouse_loc =
+                    gl::GetUniformLocation(shader.id, "iMouse\0".as_ptr() as *const i8);
                 gl::Uniform4f(i_mouse_loc, app.curpos.0, app.curpos.1, 0.0, 0.0);
             }
         }
         // end temp
         // */
-
         unsafe {
             gl::ClearColor(0.2, 0.3, 0.3, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-            
         }
 
         for submesh in &obj_data {
             if let Some(mtl) = &submesh.material_data {
-                shader.set_uniform_vec3(
-                    "materialDiffuse",
-                    &mtl.diffuse_color
-                );
+                shader.set_uniform_vec3("materialDiffuse", &mtl.diffuse_color);
+                shader.set_uniform_vec3("materialSpecular", &mtl.specular_color);
+                shader.set_uniform_float("materialShininess", mtl.shininess);
             } else {
-                shader.set_uniform_vec3(
-                    "materialDiffuse",
-                    &[1.0, 1.0, 1.0]
-                );
+                shader.set_uniform_vec3("materialDiffuse", &[1.0, 1.0, 1.0]);
+                shader.set_uniform_vec3("materialSpecular", &[1.0, 1.0, 1.0]);
+                shader.set_uniform_float("materialShininess", 32.0);
             }
             submesh.mesh.draw();
         }
@@ -135,4 +146,3 @@ fn main() {
         submesh.mesh.delete();
     }
 }
-
