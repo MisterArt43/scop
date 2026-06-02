@@ -18,6 +18,7 @@ pub struct Camera {
     pub projection: Mat4,
     pub camera_distance: f32,
     pub mode: u8,
+    eye_position: Vec3,
 }
 
 impl Camera {
@@ -31,6 +32,7 @@ impl Camera {
             projection: Mat4::new(),
             camera_distance: 10.0,
             mode: 0,
+            eye_position: Vec3::new(0.0, 0.0, 0.0),
         }
     }
 
@@ -91,13 +93,13 @@ impl Camera {
         //  FREE CAMERA ///
         ///////////////////
         if self.mode == 0 {
-            let eye = self.transform.position;
+            self.eye_position = self.transform.position;
             let target = self
                 .transform
                 .position
                 .add(&self.transform.rotation.forward());
             let up = self.transform.rotation.rotate_vector(UP);
-            self.view = Mat4::look_at(eye, target, up);
+            self.view = Mat4::look_at(self.eye_position, target, up);
         }
         ///////////////////
         //  FREE CAMERA ///
@@ -115,25 +117,15 @@ impl Camera {
                 z: 0.0,
             };
             let forward = self.transform.rotation.forward();
-            let eye = target.sub(&forward.mul_scalar(self.camera_distance));
+            self.eye_position = target.sub(&forward.mul_scalar(self.camera_distance));
             // Use world up for stable orbiting
             let up = Vec3::new(0.0, 1.0, 0.0);
-            self.view = Mat4::look_at(eye, target, up);
+            self.view = Mat4::look_at(self.eye_position, target, up);
         }
     }
 
     pub fn eye_position(&self) -> Vec3 {
-        if self.mode == 0 {
-            self.transform.position
-        } else {
-            let target = Vec3 {
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-            };
-            let forward = self.transform.rotation.forward();
-            target.sub(&forward.mul_scalar(self.camera_distance))
-        }
+        self.eye_position
     }
 
     pub fn set_aspect_ratio(&mut self, aspect_ratio: f32) {

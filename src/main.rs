@@ -1,6 +1,6 @@
 use gl::{CULL_FACE, Viewport};
 
-use crate::{application::Application, shader::Shader};
+use crate::{application::Application, math::vec3::Vec3, shader::Shader};
 
 pub mod application;
 pub mod camera;
@@ -90,7 +90,7 @@ fn main() {
             shader.set_uniform_mat4("projection", &app.camera.projection.to_flat_array());
             shader.set_uniform_mat4("view", &app.camera.view.to_flat_array());
 
-            let eye_pos = app.camera.eye_position();
+            let eye_pos = app.camera.eye_position(); // + Vec3::new(0.0, 1.0, 0.0);
             shader.set_uniform_vec3("lightPos", &eye_pos.to_array());
             shader.set_uniform_vec3("viewPos", &eye_pos.to_array());
             shader.set_uniform_vec3("lightColor", &[1.0, 1.0, 1.0]);
