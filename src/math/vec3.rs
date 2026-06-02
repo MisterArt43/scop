@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
+use std::ops::{Add, AddAssign, DivAssign, MulAssign, SubAssign};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Vec3 {
@@ -109,6 +109,18 @@ impl Vec3 {
 
     pub fn to_array(&self) -> [f32; 3] {
         [self.x, self.y, self.z]
+    }
+}
+
+impl Add for Vec3 {
+    type Output = Vec3;
+
+    fn add(self, other: Self) -> Self::Output {
+        Vec3 {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        }
     }
 }
 
