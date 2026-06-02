@@ -106,6 +106,10 @@ impl Vec3 {
     pub fn up(&self) -> Vec3 {
         self.forward().cross(&self.right())
     }
+
+    pub fn to_array(&self) -> [f32; 3] {
+        [self.x, self.y, self.z]
+    }
 }
 
 impl AddAssign for Vec3 {
@@ -140,6 +144,18 @@ impl MulAssign<f32> for Vec3 {
     }
 }
 
-pub const FORWARD: Vec3 = Vec3 { x: 0.0, y: 0.0, z: -1.0 };
-pub const RIGHT: Vec3 = Vec3 { x: 1.0, y: 0.0, z: 0.0 };
-pub const UP: Vec3 = Vec3 { x: 0.0, y: 1.0, z: 0.0 };
+pub const FORWARD: Vec3 = Vec3 {
+    x: 0.0,
+    y: 0.0,
+    z: -1.0,
+};
+pub const RIGHT: Vec3 = Vec3 {
+    x: 1.0,
+    y: 0.0,
+    z: 0.0,
+};
+pub const UP: Vec3 = Vec3 {
+    x: 0.0,
+    y: 1.0,
+    z: 0.0,
+};

@@ -57,7 +57,6 @@ impl Vec2 {
     }
 }
 
-
 impl AddAssign for Vec2 {
     fn add_assign(&mut self, other: Self) {
         self.x += other.x;

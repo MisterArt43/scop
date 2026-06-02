@@ -7,7 +7,9 @@ pub struct Mat4 {
 
 impl Mat4 {
     pub fn new() -> Self {
-        Mat4 { data: [[0.0; 4]; 4] }
+        Mat4 {
+            data: [[0.0; 4]; 4],
+        }
     }
 
     pub fn identity() -> Self {
@@ -45,12 +47,12 @@ impl Mat4 {
         let mut inv = Mat4::new();
         let mut det: f32;
 
-        inv.data[0][0] = self.data[1][1] * self.data[2][2] * self.data[3][3] -
-                         self.data[1][1] * self.data[2][3] * self.data[3][2] -
-                         self.data[2][1] * self.data[1][2] * self.data[3][3] +
-                         self.data[2][1] * self.data[1][3] * self.data[3][2] +
-                         self.data[3][1] * self.data[1][2] * self.data[2][3] -
-                         self.data[3][1] * self.data[1][3] * self.data[2][2];
+        inv.data[0][0] = self.data[1][1] * self.data[2][2] * self.data[3][3]
+            - self.data[1][1] * self.data[2][3] * self.data[3][2]
+            - self.data[2][1] * self.data[1][2] * self.data[3][3]
+            + self.data[2][1] * self.data[1][3] * self.data[3][2]
+            + self.data[3][1] * self.data[1][2] * self.data[2][3]
+            - self.data[3][1] * self.data[1][3] * self.data[2][2];
 
         det = self.data[0][0] * inv.data[0][0];
         if det == 0.0 {
@@ -80,7 +82,7 @@ impl Mat4 {
                 [s.y, u.y, -f.y, 0.0],
                 [s.z, u.z, -f.z, 0.0],
                 [-s.dot(&eye), -u.dot(&eye), f.dot(&eye), 1.0],
-            ]
+            ],
         }
     }
 

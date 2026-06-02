@@ -1,5 +1,11 @@
-use crate::{math::{mat4::Mat4, transform::Transform, vec3::{FORWARD, RIGHT, UP, Vec3}}, mesh::SubMesh};
-
+use crate::{
+    math::{
+        mat4::Mat4,
+        transform::Transform,
+        vec3::{FORWARD, RIGHT, UP, Vec3},
+    },
+    mesh::SubMesh,
+};
 
 // ignore unused for now
 #[allow(unused)]
@@ -11,7 +17,7 @@ pub struct Camera {
     pub view: Mat4,
     pub projection: Mat4,
     pub camera_distance: f32,
-    pub mode : u8,
+    pub mode: u8,
 }
 
 impl Camera {
@@ -33,8 +39,12 @@ impl Camera {
         let mut scene_max = [f32::NEG_INFINITY; 3];
         for sub in sub_mesh {
             for i in 0..3 {
-                if sub.mesh.bbox_min[i] < scene_min[i] { scene_min[i] = sub.mesh.bbox_min[i]; }
-                if sub.mesh.bbox_max[i] > scene_max[i] { scene_max[i] = sub.mesh.bbox_max[i]; }
+                if sub.mesh.bbox_min[i] < scene_min[i] {
+                    scene_min[i] = sub.mesh.bbox_min[i];
+                }
+                if sub.mesh.bbox_max[i] > scene_max[i] {
+                    scene_max[i] = sub.mesh.bbox_max[i];
+                }
             }
         }
         let center = Vec3::new(
@@ -42,7 +52,9 @@ impl Camera {
             (scene_min[1] + scene_max[1]) * 0.5,
             (scene_min[2] + scene_max[2]) * 0.5,
         );
-        let diag = (scene_max[0] - scene_min[0]).max(scene_max[1] - scene_min[1]).max(scene_max[2] - scene_min[2]);
+        let diag = (scene_max[0] - scene_min[0])
+            .max(scene_max[1] - scene_min[1])
+            .max(scene_max[2] - scene_min[2]);
 
         let scale_factor = 1.0 / diag.max(1.0);
         self.model.data[0][0] = scale_factor;
@@ -75,13 +87,15 @@ impl Camera {
         let aspec = fb_width / fb_height;
         self.projection = Mat4::perspective(self.field_of_view, aspec, 0.001, 500.0);
 
-
         ///////////////////
         //  FREE CAMERA ///
         ///////////////////
         if self.mode == 0 {
             let eye = self.transform.position;
-            let target = self.transform.position.add(&self.transform.rotation.forward());
+            let target = self
+                .transform
+                .position
+                .add(&self.transform.rotation.forward());
             let up = self.transform.rotation.rotate_vector(UP);
             self.view = Mat4::look_at(eye, target, up);
         }
@@ -89,14 +103,17 @@ impl Camera {
         //  FREE CAMERA ///
         ///////////////////
 
-
         /////////////////////
         // LOOK-AT CAMERA /// -> orbite autour de la target
         /////////////////////
 
         if self.mode == 1 {
             // Compute orbiting eye position from quaternion forward vector
-            let target = Vec3 { x: 0.0, y: 0.0, z: 0.0 };
+            let target = Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            };
             let forward = self.transform.rotation.forward();
             let eye = target.sub(&forward.mul_scalar(self.camera_distance));
             // Use world up for stable orbiting

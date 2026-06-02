@@ -70,11 +70,10 @@ fn parse_ppm(path: &str) -> Vec<Pixel> {
         .read_line(&mut header)
         .expect("Failed to read PPM header");
 
-        let mut width = 0;
-        let mut height = 0;
-        let mut max_color = 0;
-        let mut format = String::new();
-    
-    
+    let mut width = 0;
+    let mut height = 0;
+    let mut max_color = 0;
+    let mut format = String::new();
+
     Vec::new()
 }

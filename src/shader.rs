@@ -1,8 +1,12 @@
 use anyhow::{Result, anyhow};
-use std::{ffi::{CString}, fs::read, ptr::null_mut};
+use std::{ffi::CString, fs::read, ptr::null_mut};
 
 use gl::{
-    AttachShader, COMPILE_STATUS, CompileShader, CreateProgram, CreateShader, DeleteProgram, DeleteShader, FALSE, FRAGMENT_SHADER, GetProgramInfoLog, GetProgramiv, GetShaderInfoLog, GetShaderiv, GetUniformLocation, LINK_STATUS, LinkProgram, ShaderSource, Uniform1f, Uniform1i, Uniform2fv, Uniform3fv, Uniform4fv, UniformMatrix4fv, UseProgram, VERTEX_SHADER, types::{self, GLint, GLuint}
+    AttachShader, COMPILE_STATUS, CompileShader, CreateProgram, CreateShader, DeleteProgram,
+    DeleteShader, FALSE, FRAGMENT_SHADER, GetProgramInfoLog, GetProgramiv, GetShaderInfoLog,
+    GetShaderiv, GetUniformLocation, LINK_STATUS, LinkProgram, ShaderSource, Uniform1f, Uniform1i,
+    Uniform2fv, Uniform3fv, Uniform4fv, UniformMatrix4fv, UseProgram, VERTEX_SHADER,
+    types::{self, GLint, GLuint},
 };
 
 #[derive(Default)]
@@ -25,7 +29,6 @@ impl Shader {
             CompileShader(vert_shader);
             Shader::compile_error(vert_shader, "VERTEX")?;
 
-
             let frag_shader = CreateShader(FRAGMENT_SHADER);
 
             let f_ptr = fragment_str.as_ptr() as *const i8;
@@ -34,7 +37,6 @@ impl Shader {
             CompileShader(frag_shader);
             Shader::compile_error(frag_shader, "FRAGMENT")?;
 
-            
             shader.id = CreateProgram();
             AttachShader(shader.id, vert_shader);
             AttachShader(shader.id, frag_shader);
@@ -135,6 +137,6 @@ impl Shader {
     }
 }
 
-fn str_to_cstring(str:&str) -> CString {
+fn str_to_cstring(str: &str) -> CString {
     CString::new(str).expect("Failed to convert uniform name to CString")
 }
