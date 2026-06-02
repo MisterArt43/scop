@@ -1,14 +1,15 @@
-use std::{os::raw::c_void};
+use std::os::raw::c_void;
 
-use gl::{self, BindVertexArray, DeleteVertexArrays, EnableVertexAttribArray, FALSE, VertexAttribPointer, types::{GLenum, GLint, GLsizei, GLuint}};
+use gl::{
+    self, BindVertexArray, DeleteVertexArrays, EnableVertexAttribArray, FALSE, VertexAttribPointer,
+    types::{GLenum, GLint, GLsizei, GLuint},
+};
 
 use crate::vbo::VBO;
 
-
-
-#[derive(Default)]
+#[derive(Default, Debug, Clone)]
 pub struct VAO {
-    id: GLuint
+    id: GLuint,
 }
 
 impl VAO {
@@ -16,9 +17,7 @@ impl VAO {
         // initialize vao with ID undefined
         let mut vao = VAO::default();
 
-        unsafe {
-            gl::GenVertexArrays(1, &mut vao.id)
-        }
+        unsafe { gl::GenVertexArrays(1, &mut vao.id) }
         vao
     }
 
@@ -34,18 +33,31 @@ impl VAO {
         }
     }
 
-    pub fn link_attrib(&self, vbo: &VBO, layout: GLuint, num_components: GLint, type_: GLenum, stride: GLsizei, offset: usize) {
+    pub fn link_attrib(
+        &self,
+        vbo: &VBO,
+        layout: GLuint,
+        num_components: GLint,
+        type_: GLenum,
+        stride: GLsizei,
+        offset: usize,
+    ) {
         vbo.bind();
         unsafe {
-            VertexAttribPointer(layout, num_components, type_, FALSE, stride, offset as *const c_void);
+            VertexAttribPointer(
+                layout,
+                num_components,
+                type_,
+                FALSE,
+                stride,
+                offset as *const c_void,
+            );
             EnableVertexAttribArray(layout);
         }
         vbo.unbind();
-    } 
+    }
 
     pub fn delete(&self) {
-        unsafe {
-            DeleteVertexArrays(1, &self.id)
-        }
+        unsafe { DeleteVertexArrays(1, &self.id) }
     }
 }

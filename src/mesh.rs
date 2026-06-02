@@ -1,7 +1,16 @@
-use std::{collections::HashMap, fs::{self}, iter::Skip, mem::offset_of, ptr::null, str::SplitWhitespace, usize};
-use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
 use crate::{ebo::EBO, vao::VAO, vbo::VBO};
+use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
+use std::{
+    collections::HashMap,
+    fs::{self},
+    iter::Skip,
+    mem::offset_of,
+    ptr::null,
+    str::SplitWhitespace,
+    usize,
+};
 
+#[derive(Debug, Clone)]
 pub struct Mesh {
     pub vao: VAO,
     pub vbo: VBO,
@@ -13,6 +22,7 @@ pub struct Mesh {
     pub bbox_max: [f32; 3],
 }
 
+#[derive(Debug, Clone)]
 pub struct SubMesh {
     pub object: String,
     pub group: String,
@@ -23,16 +33,16 @@ pub struct SubMesh {
 
 #[derive(Clone, Debug)]
 pub struct Mtl {
-    pub name: String, // name of the material
-    pub ambient_color: [f32; 3], // Ka
-    pub diffuse_color: [f32; 3], // Kd
-    pub specular_color: [f32; 3], // Ks
-    pub shininess: f32, // Ns
-    pub diffuse_texture: Option<String>, // map_Kd
+    pub name: String,                     // name of the material
+    pub ambient_color: [f32; 3],          // Ka
+    pub diffuse_color: [f32; 3],          // Kd
+    pub specular_color: [f32; 3],         // Ks
+    pub shininess: f32,                   // Ns
+    pub diffuse_texture: Option<String>,  // map_Kd
     pub index_of_refraction: Option<f32>, // Ni
-    pub alpha: Option<f32>, // d or Tr
+    pub alpha: Option<f32>,               // d or Tr
     pub specular_texture: Option<String>, // map_Km
-    pub illumination_model: Option<u32>, // illum
+    pub illumination_model: Option<u32>,  // illum
 }
 
 pub struct Vertex {
@@ -70,15 +80,15 @@ impl Builder {
 
 #[derive(Debug, Clone, Copy)]
 struct ObjIndex {
-    v: i32,              // index position
-    vt: Option<i32>,     // index uv
-    vn: Option<i32>,     // index normal
+    v: i32,          // index position
+    vt: Option<i32>, // index uv
+    vn: Option<i32>, // index normal
 }
 #[derive(PartialEq, Eq, Hash)]
 struct VertexKey {
-    v: usize,              // index position
-    vt: Option<usize>,     // index uv
-    vn: Option<usize>,     // index normal
+    v: usize,          // index position
+    vt: Option<usize>, // index uv
+    vn: Option<usize>, // index normal
 }
 
 impl Mesh {
@@ -99,7 +109,8 @@ impl Mesh {
 
         let mesh = Mesh {
             vao: VAO::new(),
-            vbo: VBO::new(vertices,
+            vbo: VBO::new(
+                vertices,
                 (vertices.len() * std::mem::size_of::<Vertex>()) as isize,
             ),
             ebo: EBO::new(
@@ -114,10 +125,38 @@ impl Mesh {
         mesh.vao.bind();
         mesh.ebo.bind();
 
-        mesh.vao.link_attrib(&mesh.vbo, 0, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, position));
-        mesh.vao.link_attrib(&mesh.vbo, 1, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, normal));
-        mesh.vao.link_attrib(&mesh.vbo, 2, 2, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, uv));
-        mesh.vao.link_attrib(&mesh.vbo, 3, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, color));
+        mesh.vao.link_attrib(
+            &mesh.vbo,
+            0,
+            3,
+            FLOAT,
+            size_of::<Vertex>() as i32,
+            offset_of!(Vertex, position),
+        );
+        mesh.vao.link_attrib(
+            &mesh.vbo,
+            1,
+            3,
+            FLOAT,
+            size_of::<Vertex>() as i32,
+            offset_of!(Vertex, normal),
+        );
+        mesh.vao.link_attrib(
+            &mesh.vbo,
+            2,
+            2,
+            FLOAT,
+            size_of::<Vertex>() as i32,
+            offset_of!(Vertex, uv),
+        );
+        mesh.vao.link_attrib(
+            &mesh.vbo,
+            3,
+            3,
+            FLOAT,
+            size_of::<Vertex>() as i32,
+            offset_of!(Vertex, color),
+        );
 
         mesh.vao.unbind();
         mesh.vbo.unbind();
@@ -145,8 +184,8 @@ impl Mesh {
     }
 
     pub fn from_obj(path: &str) -> Result<Vec<SubMesh>, String> {
-        let obj_file: String = fs::read_to_string(path)
-            .map_err(|e| format!("Failed to read .obj file: {}", e))?;
+        let obj_file: String =
+            fs::read_to_string(path).map_err(|e| format!("Failed to read .obj file: {}", e))?;
 
         let mut mtl_data_map: HashMap<String, Mtl> = HashMap::new(); // pour stocker les données des matériaux parsés depuis les .mtl (clé : nom du matériau)
         let mut builder = Builder {
@@ -167,24 +206,24 @@ impl Mesh {
 
         let mut meshes: Vec<SubMesh> = Vec::new(); // pour stocker les meshes d'un même .obj (o/g/usemtl)
 
-        for line in  obj_file.lines() {
+        for line in obj_file.lines() {
             match line.split_whitespace().next() {
                 Some("v") => {
                     let mut parts = line.split_whitespace().skip(1);
                     let (position, color) = Self::parse_v(&mut parts);
                     vertex_positions.push(position);
                     vertex_color.push(color);
-                },
+                }
                 Some("vn") => {
                     let mut parts = line.split_whitespace().skip(1);
                     vertex_normals.push(Self::parse_vec3(&mut parts));
-                },
+                }
                 Some("vt") => {
                     let mut parts = line.split_whitespace().skip(1);
                     vertex_uvs.push(Self::parse_vec2(&mut parts));
-                },
+                }
                 Some("f") => {
-                    // Pour le parsing de f il y a plusieurs formats : 
+                    // Pour le parsing de f il y a plusieurs formats :
                     // vIndex/vtIndex/vnIndex
                     // vIndex//vnIndex (pas d’uv)
                     // vIndex/vtIndex (pas de normal)
@@ -193,17 +232,19 @@ impl Mesh {
                     //il faut pouvoir parser n-gones car f peut contenir de 3 a n vertices
 
                     let mut face_indices: Vec<u32> = Vec::new();
-                    
-                    let parts = line
-                        .split_whitespace()
-                        .skip(1); // découpe par vertice + skip le "f" du début
+
+                    let parts = line.split_whitespace().skip(1); // découpe par vertice + skip le "f" du début
                     for part in parts {
                         // parsing de f pour choper les index et les résoudre car le format est 1-based (ca peut etre neg)
                         let key = Self::parse_face(part);
                         let key = VertexKey {
                             v: Self::resolve_vertex_index(key.v, vertex_positions.len()),
-                            vt: key.vt.map(|i| Self::resolve_vertex_index(i, vertex_uvs.len())),
-                            vn: key.vn.map(|i| Self::resolve_vertex_index(i, vertex_normals.len())),
+                            vt: key
+                                .vt
+                                .map(|i| Self::resolve_vertex_index(i, vertex_uvs.len())),
+                            vn: key
+                                .vn
+                                .map(|i| Self::resolve_vertex_index(i, vertex_normals.len())),
                         };
 
                         // récupérer l'index si le vertex existe déjà ou sinon j'en créer un nouveau
@@ -241,47 +282,61 @@ impl Mesh {
                             builder.indices.push(face_indices[i]);
                             builder.indices.push(face_indices[i + 1]);
                         }
+                    } else {
+                        println!(
+                            "Face with less than 3 vertices found in .obj file, skipping: {}",
+                            line
+                        );
                     }
-                    else {
-                        println!("Face with less than 3 vertices found in .obj file, skipping: {}", line);
-                    }
-                },
+                }
                 Some("o") => {
                     Self::flush_builder_if_needed(&mut builder, &mut meshes); // flush le builder avant de commencer un nouveau mesh
-                    builder.object = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
-                },
+                    builder.object = line
+                        .split_once(' ')
+                        .map(|(_, name)| name.trim().to_string())
+                        .unwrap_or_else(|| "default".to_string());
+                }
                 Some("g") => {
                     Self::flush_builder_if_needed(&mut builder, &mut meshes); // flush le builder avant de commencer un nouveau mesh
-                    builder.group = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
-                },
+                    builder.group = line
+                        .split_once(' ')
+                        .map(|(_, name)| name.trim().to_string())
+                        .unwrap_or_else(|| "default".to_string());
+                }
                 Some("mtllib") => {
-                    let mtl_path = line.split_once(' ').map(|(_, path)| path.trim()).unwrap_or("default.mtl");
-                    println!("try to parse mtl file at path {}", mtl_path);
-                    
+                    let mtl_path = line
+                        .split_once(' ')
+                        .map(|(_, path)| path.trim())
+                        .unwrap_or("default.mtl");
+                    println!("parsing mtl file at path : {}", mtl_path);
+
                     if let Ok(materials) = Self::parse_mtl(mtl_path, path) {
                         for (name, mtl) in materials {
                             mtl_data_map.insert(name, mtl);
                         }
                     }
-                },
+                }
                 Some("usemtl") => {
                     Self::flush_builder_if_needed(&mut builder, &mut meshes); // flush le builder avant de commencer un nouveau mesh
 
-                    
-                    builder.material = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
-                    println!("try to parse mtl for material : {}", builder.material);
-                    builder.material_data = Self::match_mtl(&builder.material, &mtl_data_map).cloned();
+                    builder.material = line
+                        .split_once(' ')
+                        .map(|(_, name)| name.trim().to_string())
+                        .unwrap_or_else(|| "default".to_string());
+                    println!("parse material : {}", builder.material);
+                    builder.material_data =
+                        Self::match_mtl(&builder.material, &mtl_data_map).cloned();
 
                     // println!("Material data for {}: {:?}", builder.material, builder.material_data);
-                },
+                }
                 Some("#") => {
                     // pr éviter les print! dans les log
-                },
+                }
                 _ => {
                     if !line.trim().is_empty() {
                         println!("Unknown line in .obj file: {}", line);
                     }
-                },
+                }
             }
         }
 
@@ -296,7 +351,9 @@ impl Mesh {
     }
 
     fn parse_mtl(path: &str, obj_path: &str) -> Result<HashMap<String, Mtl>, String> {
-        let obj_dir = std::path::Path::new(obj_path).parent().unwrap_or(std::path::Path::new("./"));
+        let obj_dir = std::path::Path::new(obj_path)
+            .parent()
+            .unwrap_or(std::path::Path::new("./"));
         let mtl_path = obj_dir.join(path);
         let mtl_file: String = fs::read_to_string(&mtl_path)
             .map_err(|e| format!("Failed to read .mtl file: {}", e))?;
@@ -309,7 +366,10 @@ impl Mesh {
                     if let Some(mat) = current_material.take() {
                         materials.insert(mat.name.clone(), mat);
                     }
-                    let name = line.split_once(' ').map(|(_, name)| name.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                    let name = line
+                        .split_once(' ')
+                        .map(|(_, name)| name.trim().to_string())
+                        .unwrap_or_else(|| "default".to_string());
                     current_material = Some(Mtl {
                         name,
                         ambient_color: [0.0; 3],
@@ -322,87 +382,98 @@ impl Mesh {
                         specular_texture: None,
                         illumination_model: None,
                     });
-                },
+                }
                 Some("Ka") => {
                     // ambient color
                     if let Some(mat) = &mut current_material {
                         let mut parts = line.split_whitespace().skip(1);
                         mat.ambient_color = Self::parse_vec3(&mut parts);
                     }
-                    
-                },
+                }
                 Some("Kd") => {
                     // diffuse color
                     if let Some(mat) = &mut current_material {
                         let mut parts = line.split_whitespace().skip(1);
                         mat.diffuse_color = Self::parse_vec3(&mut parts);
                     }
-                },
+                }
                 Some("Ks") => {
                     // specular color
                     if let Some(mat) = &mut current_material {
                         let mut parts = line.split_whitespace().skip(1);
                         mat.specular_color = Self::parse_vec3(&mut parts);
                     }
-                },
+                }
                 Some("Ns") => {
                     // shininess
                     if let Some(mat) = &mut current_material {
                         let mut parts = line.split_whitespace().skip(1);
-                        mat.shininess = parts.next().and_then(|s| s.parse::<f32>().ok()).unwrap_or(0.0);
+                        mat.shininess = parts
+                            .next()
+                            .and_then(|s| s.parse::<f32>().ok())
+                            .unwrap_or(0.0);
                     }
-                },
+                }
                 Some("map_Kd") => {
                     // diffuse texture
                     if let Some(mat) = &mut current_material {
-                        let texture_path = line.split_once(' ').map(|(_, path)| path.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                        let texture_path = line
+                            .split_once(' ')
+                            .map(|(_, path)| path.trim().to_string())
+                            .unwrap_or_else(|| "default".to_string());
                         mat.diffuse_texture = Some(texture_path);
                     }
-                },
+                }
                 Some("Ni") => {
                     // index of refraction
                     if let Some(mat) = &mut current_material {
                         let mut parts = line.split_whitespace().skip(1);
                         mat.index_of_refraction = parts.next().and_then(|s| s.parse::<f32>().ok());
                     }
-                },
+                }
                 Some("d") => {
                     // alpha (transparency)
                     if let Some(mat) = &mut current_material {
                         let mut parts = line.split_whitespace().skip(1);
                         mat.alpha = parts.next().and_then(|s| s.parse::<f32>().ok());
                     }
-                },
+                }
                 Some("Tr") => {
                     // transparency
                     if let Some(mat) = &mut current_material {
                         let mut parts = line.split_whitespace().skip(1);
                         mat.alpha = parts.next().and_then(|s| s.parse::<f32>().ok());
                     }
-                },
+                }
                 Some("map_Ks") | Some("map_Km") | Some("Km") => {
                     // specular texture
                     if let Some(mat) = &mut current_material {
-                        let texture_path = line.split_once(' ').map(|(_, path)| path.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                        let texture_path = line
+                            .split_once(' ')
+                            .map(|(_, path)| path.trim().to_string())
+                            .unwrap_or_else(|| "default".to_string());
                         mat.specular_texture = Some(texture_path);
                     }
-                },
+                }
                 Some("illum") => {
                     // illumination model
                     if let Some(mat) = &mut current_material {
                         let mut parts = line.split_whitespace().skip(1);
-                        let illum_model = parts.next().and_then(|s| s.parse::<u32>().ok()).unwrap_or(0);
+                        let illum_model = parts
+                            .next()
+                            .and_then(|s| s.parse::<u32>().ok())
+                            .unwrap_or(0);
                         mat.illumination_model = Some(illum_model);
                     }
-                },
+                }
                 Some("#") => {
                     // comment, ignore
-                },
+                }
                 _ => {
                     if !line.trim().is_empty() {
                         println!("Unknown line in .mtl file: {}", line);
                     }
-                },
+                }
             }
         });
         if let Some(mat) = current_material.take() {
@@ -443,7 +514,7 @@ impl Mesh {
         obj_index as usize
     }
 
-    fn parse_face(token: &str) -> ObjIndex {        
+    fn parse_face(token: &str) -> ObjIndex {
         let mut it = token.split('/');
 
         let v = it
@@ -451,21 +522,27 @@ impl Mesh {
             .and_then(|s| s.parse::<i32>().ok())
             .expect("Failed to parse vertex index");
 
-        let vt = it
-            .next()
-            .and_then(|s| {
-                if s.is_empty() { None } 
-                else { s.parse::<i32>().ok() }
-            });
-        
-        let vn = it
-            .next()
-            .and_then(|s| {
-                if s.is_empty() { None }
-                else { s.parse::<i32>().ok() }
-            });
+        let vt = it.next().and_then(|s| {
+            if s.is_empty() {
+                None
+            } else {
+                s.parse::<i32>().ok()
+            }
+        });
 
-        ObjIndex { v: v, vt: vt, vn: vn }
+        let vn = it.next().and_then(|s| {
+            if s.is_empty() {
+                None
+            } else {
+                s.parse::<i32>().ok()
+            }
+        });
+
+        ObjIndex {
+            v: v,
+            vt: vt,
+            vn: vn,
+        }
     }
 
     fn parse_v(token: &mut Skip<SplitWhitespace<'_>>) -> ([f32; 3], Option<[f32; 3]>) {
@@ -477,7 +554,7 @@ impl Mesh {
             token.next().and_then(|s| s.parse::<f32>().ok()),
             token.next().and_then(|s| s.parse::<f32>().ok()),
         ];
-        
+
         let color = if color.iter().all(|c| c.is_some()) {
             Some([color[0].unwrap(), color[1].unwrap(), color[2].unwrap()])
         } else {
@@ -488,13 +565,16 @@ impl Mesh {
 
     fn parse_vec3(parts: &mut Skip<SplitWhitespace<'_>>) -> [f32; 3] {
         [
-            parts.next()
+            parts
+                .next()
                 .and_then(|s| s.parse::<f32>().ok())
                 .unwrap_or(0.0),
-            parts.next()
+            parts
+                .next()
                 .and_then(|s| s.parse::<f32>().ok())
                 .unwrap_or(0.0),
-            parts.next()
+            parts
+                .next()
                 .and_then(|s| s.parse::<f32>().ok())
                 .unwrap_or(0.0),
         ]
@@ -502,10 +582,12 @@ impl Mesh {
 
     fn parse_vec2(parts: &mut Skip<SplitWhitespace<'_>>) -> [f32; 2] {
         [
-            parts.next()
+            parts
+                .next()
                 .and_then(|s| s.parse::<f32>().ok())
                 .unwrap_or(0.0),
-            parts.next()
+            parts
+                .next()
                 .and_then(|s| s.parse::<f32>().ok())
                 .unwrap_or(0.0),
         ]

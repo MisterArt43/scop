@@ -1,9 +1,11 @@
+use gl::{
+    self, BindBuffer, BufferData, DeleteBuffers, ELEMENT_ARRAY_BUFFER, GenBuffers, STATIC_DRAW,
+    types::GLuint,
+};
 
-use gl::{self, BindBuffer, BufferData, DeleteBuffers, ELEMENT_ARRAY_BUFFER, GenBuffers, STATIC_DRAW, types::GLuint};
-
-#[derive(Default)]
+#[derive(Default, Debug, Clone)]
 pub struct EBO {
-    id: GLuint
+    id: GLuint,
 }
 
 impl EBO {
@@ -14,7 +16,12 @@ impl EBO {
         unsafe {
             GenBuffers(1, &mut ebo.id);
             BindBuffer(ELEMENT_ARRAY_BUFFER, ebo.id);
-            BufferData(ELEMENT_ARRAY_BUFFER, size, indices.as_ptr() as *const _, STATIC_DRAW);
+            BufferData(
+                ELEMENT_ARRAY_BUFFER,
+                size,
+                indices.as_ptr() as *const _,
+                STATIC_DRAW,
+            );
         }
         ebo
     }
@@ -32,8 +39,6 @@ impl EBO {
     }
 
     pub fn delete(&self) {
-        unsafe {
-            DeleteBuffers(1, &self.id)
-        }
+        unsafe { DeleteBuffers(1, &self.id) }
     }
 }
