@@ -90,9 +90,10 @@ fn main() {
             shader.set_uniform_mat4("projection", &app.camera.projection.to_flat_array());
             shader.set_uniform_mat4("view", &app.camera.view.to_flat_array());
 
-            shader.set_uniform_vec3("lightPos", &obj_data[0].mesh.bbox_max); // positionne la lumière à l'opposé de la position de la caméra pour un meilleur éclairage
-            shader.set_uniform_vec3("viewPos", &app.camera.transform.position.to_array());
-            shader.set_uniform_vec3("lightColor", &[1.0, 0.5, 1.0]);
+            let eye_pos = app.camera.eye_position();
+            shader.set_uniform_vec3("lightPos", &eye_pos.to_array());
+            shader.set_uniform_vec3("viewPos", &eye_pos.to_array());
+            shader.set_uniform_vec3("lightColor", &[1.0, 1.0, 1.0]);
         }
 
         // /*

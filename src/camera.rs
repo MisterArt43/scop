@@ -122,6 +122,20 @@ impl Camera {
         }
     }
 
+    pub fn eye_position(&self) -> Vec3 {
+        if self.mode == 0 {
+            self.transform.position
+        } else {
+            let target = Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            };
+            let forward = self.transform.rotation.forward();
+            target.sub(&forward.mul_scalar(self.camera_distance))
+        }
+    }
+
     pub fn set_aspect_ratio(&mut self, aspect_ratio: f32) {
         self.field_of_view = aspect_ratio;
     }
