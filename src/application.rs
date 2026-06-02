@@ -3,7 +3,7 @@ use gl_loader::init_gl;
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent, WindowHint};
 use std::collections::HashSet;
 
-use crate::camera::{Camera};
+use crate::camera::Camera;
 
 // ignore unused for now
 #[allow(unused)]
@@ -32,6 +32,10 @@ impl Application {
         WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core);
         WindowHint::DepthBits(Some(24)); // le depth buffer sert a stocker la profondeur de chaque pixel on appelle ca le z-buffer et il est de 24 bits, (plus il est grand plus on peut stocker de profondeur et moins on a de probleme de z-fighting(texture qui clip entre elle)) // mais attention car un buffer trop grand peut aussi causer des problemes de performance
         WindowHint::Samples(Some(4));
+        // to use GPU rendering instead ofCPU integrated rendering (if available)
+        WindowHint::DoubleBuffer(true);
+        WindowHint::Resizable(true);
+        WindowHint::Visible(true);
 
         let (window, events) = glfw
             .create_window(
@@ -127,9 +131,16 @@ impl Application {
 
                     if key == glfw::Key::C && action == glfw::Action::Press {
                         self.camera.mode = (self.camera.mode + 1) % 2;
-                        println!("Camera mode: {}", if self.camera.mode == 0 { "Free" } else { "Look-At" });
+                        println!(
+                            "Camera mode: {}",
+                            if self.camera.mode == 0 {
+                                "Free"
+                            } else {
+                                "Look-At"
+                            }
+                        );
                     }
-                    
+
                     if key == glfw::Key::Escape && action == glfw::Action::Press {
                         self.window.set_should_close(true);
                     }
@@ -143,23 +154,53 @@ impl Application {
         self.update();
     }
 
-    pub fn update (&mut self) {
+    pub fn update(&mut self) {
         // pr gerer les inputs pr la cam
         let zoom_speed = 1.2 * self.delta_time; // Adjust as needed
         let move_speed = 1.0 * self.delta_time * self.camera.camera_distance; // Adjust as needed
         let rotation_speed = 2.0 * self.delta_time * self.camera.camera_distance; // Adjust as needed
-        if self.pressed_keys.contains(&glfw::Key::W) {      self.camera.move_forward(move_speed); }
-        if self.pressed_keys.contains(&glfw::Key::S) {      self.camera.move_forward(-move_speed); }
-        if self.pressed_keys.contains(&glfw::Key::A) {      self.camera.move_right(-move_speed); }
-        if self.pressed_keys.contains(&glfw::Key::D) {      self.camera.move_right(move_speed); }
-        if self.pressed_keys.contains(&glfw::Key::Q) {      self.camera.move_up(-move_speed); }
-        if self.pressed_keys.contains(&glfw::Key::E) {      self.camera.move_up(move_speed); }
-        if self.pressed_keys.contains(&glfw::Key::Up) {     self.camera.transform.rotation.rotate_pitch(rotation_speed); }
-        if self.pressed_keys.contains(&glfw::Key::Down) {   self.camera.transform.rotation.rotate_pitch(-rotation_speed); }
-        if self.pressed_keys.contains(&glfw::Key::Left) {   self.camera.transform.rotation.rotate_yaw(-rotation_speed); }
-        if self.pressed_keys.contains(&glfw::Key::Right) {  self.camera.transform.rotation.rotate_yaw(rotation_speed); }
-        if self.pressed_keys.contains(&glfw::Key::KpAdd) { self.camera.camera_distance -= zoom_speed; if self.camera.camera_distance < 0.1 { self.camera.camera_distance = 0.1; } }
-        if self.pressed_keys.contains(&glfw::Key::KpSubtract) { self.camera.camera_distance += zoom_speed; if self.camera.camera_distance > 100.0 { self.camera.camera_distance = 100.0; } }
+        if self.pressed_keys.contains(&glfw::Key::W) {
+            self.camera.move_forward(move_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::S) {
+            self.camera.move_forward(-move_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::A) {
+            self.camera.move_right(-move_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::D) {
+            self.camera.move_right(move_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::Q) {
+            self.camera.move_up(-move_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::E) {
+            self.camera.move_up(move_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::Up) {
+            self.camera.transform.rotation.rotate_pitch(rotation_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::Down) {
+            self.camera.transform.rotation.rotate_pitch(-rotation_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::Left) {
+            self.camera.transform.rotation.rotate_yaw(-rotation_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::Right) {
+            self.camera.transform.rotation.rotate_yaw(rotation_speed);
+        }
+        if self.pressed_keys.contains(&glfw::Key::KpAdd) {
+            self.camera.camera_distance -= zoom_speed;
+            if self.camera.camera_distance < 0.1 {
+                self.camera.camera_distance = 0.1;
+            }
+        }
+        if self.pressed_keys.contains(&glfw::Key::KpSubtract) {
+            self.camera.camera_distance += zoom_speed;
+            if self.camera.camera_distance > 100.0 {
+                self.camera.camera_distance = 100.0;
+            }
+        }
         // if self.pressed_keys.contains(&glfw::Key::C) { self.camera.mode = (self.camera.mode + 1) % 2; println!("Camera mode: {}", if self.camera.mode == 0 { "Free" } else { "Look-At" }); }
     }
 }
