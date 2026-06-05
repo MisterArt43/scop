@@ -108,6 +108,13 @@ impl Shader {
         }
     }
 
+    pub fn set_uniform_bool(&self, name: &str, value: bool) {
+        unsafe {
+            let location = GetUniformLocation(self.id, str_to_cstring(name).as_ptr());
+            Uniform1i(location, if value { 1 } else { 0 });
+        }
+    }
+
     pub fn set_uniform_vec2(&self, name: &str, value: &[types::GLfloat; 2]) {
         unsafe {
             let location = GetUniformLocation(self.id, str_to_cstring(name).as_ptr());
