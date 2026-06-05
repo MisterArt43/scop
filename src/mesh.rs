@@ -1,4 +1,4 @@
-use crate::{ebo::EBO, vao::VAO, vbo::VBO};
+use crate::{ebo::EBO, vao::VAO, vbo::VBO, texture::Texture};
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
 use std::{
     collections::HashMap,
@@ -38,10 +38,12 @@ pub struct Mtl {
     pub diffuse_color: [f32; 3],          // Kd
     pub specular_color: [f32; 3],         // Ks
     pub shininess: f32,                   // Ns
-    pub diffuse_texture: Option<String>,  // map_Kd
+    pub diffuse_texture: Option<String>,  // map_Kd (chemin du fichier)
+    pub diffuse_texture_data: Option<Texture>, // Données de texture chargées
     pub index_of_refraction: Option<f32>, // Ni
     pub alpha: Option<f32>,               // d or Tr
-    pub specular_texture: Option<String>, // map_Km
+    pub specular_texture: Option<String>, // map_Km (chemin du fichier)
+    pub specular_texture_data: Option<Texture>, // Données de texture chargées
     pub illumination_model: Option<u32>,  // illum
 }
 
@@ -60,6 +62,7 @@ struct Builder {
     group: String,
     material: String,
     material_data: Option<Mtl>,
+    face_count: u32,
 }
 
 impl Builder {
@@ -71,6 +74,7 @@ impl Builder {
         self.group = String::from("default");
         self.material = String::from("default");
         self.material_data = None;
+        self.face_count = 0;
     }
 
     fn is_empty(&self) -> bool {
@@ -196,6 +200,7 @@ impl Mesh {
             group: String::from("default"),
             material: String::from("default"),
             material_data: None,
+            face_count: 0,
         }; // le builder sera a flush par o/g/usemtl afin de gérer plusieurs mat/grp d'un même .obj
 
         let mut vertex_positions: Vec<[f32; 3]> = Vec::new();
@@ -231,8 +236,8 @@ impl Mesh {
 
                     //il faut pouvoir parser n-gones car f peut contenir de 3 a n vertices
 
-                    let mut face_indices: Vec<u32> = Vec::new();
-
+                    let mut face_indices: Vec<u32> = Vec::new();                    let current_face_index = builder.face_count;
+                    builder.face_count += 1;
                     let parts = line.split_whitespace().skip(1); // découpe par vertice + skip le "f" du début
                     for part in parts {
                         // parsing de f pour choper les index et les résoudre car le format est 1-based (ca peut etre neg)
@@ -260,7 +265,10 @@ impl Mesh {
                             let vertex = Vertex {
                                 position: vertex_positions[key.v],
                                 normal: key.vn.map_or([0.0; 3], |vn_idx| vertex_normals[vn_idx]),
-                                uv: key.vt.map_or([0.0; 2], |vt_idx| vertex_uvs[vt_idx]),
+                                uv: key.vt.map_or_else(
+                                    || Self::generate_uv_from_position(&vertex_positions[key.v], current_face_index),
+                                    |vt_idx| vertex_uvs[vt_idx]
+                                ),
                                 color,
                             };
                             // push le vertex dans le builder ! ET ! push l'index dans la map pour évité doublons
@@ -377,9 +385,11 @@ impl Mesh {
                         specular_color: [0.0; 3],
                         shininess: 0.0,
                         diffuse_texture: None,
+                        diffuse_texture_data: None,
                         index_of_refraction: None,
                         alpha: None,
                         specular_texture: None,
+                        specular_texture_data: None,
                         illumination_model: None,
                     });
                 }
@@ -421,7 +431,24 @@ impl Mesh {
                             .split_once(' ')
                             .map(|(_, path)| path.trim().to_string())
                             .unwrap_or_else(|| "default".to_string());
-                        mat.diffuse_texture = Some(texture_path);
+                        
+                        // Construire le chemin complet
+                        let full_path = obj_dir.join(&texture_path);
+                        let full_path_str = full_path.to_string_lossy().to_string();
+                        
+                        // Charger la texture
+                        println!("Chargement de la texture diffuse: {}", full_path_str);
+                        match Texture::new(&full_path_str) {
+                            Ok(texture_data) => {
+                                mat.diffuse_texture_data = Some(texture_data);
+                                println!("✓ Texture diffuse chargée avec succès");
+                            }
+                            Err(e) => {
+                                eprintln!("✗ Erreur lors du chargement de la texture diffuse: {}", e);
+                            }
+                        }
+                        
+                        mat.diffuse_texture = Some(full_path_str);
                     }
                 }
                 Some("Ni") => {
@@ -452,7 +479,24 @@ impl Mesh {
                             .split_once(' ')
                             .map(|(_, path)| path.trim().to_string())
                             .unwrap_or_else(|| "default".to_string());
-                        mat.specular_texture = Some(texture_path);
+                        
+                        // Construire le chemin complet
+                        let full_path = obj_dir.join(&texture_path);
+                        let full_path_str = full_path.to_string_lossy().to_string();
+                        
+                        // Charger la texture
+                        println!("Chargement de la texture spéculaire: {}", full_path_str);
+                        match Texture::new(&full_path_str) {
+                            Ok(texture_data) => {
+                                mat.specular_texture_data = Some(texture_data);
+                                println!("✓ Texture spéculaire chargée avec succès");
+                            }
+                            Err(e) => {
+                                eprintln!("✗ Erreur lors du chargement de la texture spéculaire: {}", e);
+                            }
+                        }
+                        
+                        mat.specular_texture = Some(full_path_str);
                     }
                 }
                 Some("illum") => {
@@ -591,6 +635,11 @@ impl Mesh {
                 .and_then(|s| s.parse::<f32>().ok())
                 .unwrap_or(0.0),
         ]
+    }
+
+    fn generate_uv_from_position(pos: &[f32; 3], face_index: u32) -> [f32; 2] {
+        let hue = (face_index % 10) as f32 / 10.0;
+        [hue, (pos[1] + 1.0) / 2.0]
     }
 
     pub fn delete(&self) {
