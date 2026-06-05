@@ -1,6 +1,8 @@
+use std::f32::consts::E;
+
 use gl::{CULL_FACE, Viewport};
 
-use crate::{application::Application, math::vec3::Vec3, shader::Shader};
+use crate::{application::Application, shader::Shader};
 
 pub mod application;
 pub mod camera;
@@ -12,6 +14,7 @@ pub mod shader;
 pub mod texture;
 pub mod vao;
 pub mod vbo;
+pub mod bmp;
 
 fn main() {
     /*
@@ -23,16 +26,20 @@ fn main() {
     /*
      * Step 2 creation du shader (read --> compile --> link a CG)
      */
-    let is_funny = false;
+    let is_funny = 2;
     let vert_file;
     let frag_file;
-    if is_funny {
-        vert_file = "./shader/funny.vert";
+    if is_funny == 0 {
         frag_file = "./shader/funny.frag";
-    } else {
-        vert_file = "./shader/basic.vert";
+        vert_file = "./shader/funny.vert";
+    } else if is_funny == 1 {
         frag_file = "./shader/basic.frag";
+        vert_file = "./shader/basic.vert";
+    } else {
+        frag_file = "./shader/solid.frag";
+        vert_file = "./shader/solid.vert";
     }
+    println!("\n=== Chargement du shader ===\n Vertex: {}\nFragment: {}", vert_file, frag_file);
     let shader = Shader::new(vert_file, frag_file).expect("Failed to load Shader files");
     // applique le shader (active le shader pour que les uniform(variables) et les textures soient pris en compte)
     shader.activate();
@@ -51,10 +58,10 @@ fn main() {
     }
 
     let mut obj_data = mesh::Mesh::from_obj(&args[1]).expect("Failed to load mesh");
-    obj_data.push(
-        mesh::Mesh::from_obj("./ressources/42.obj").expect("Failed to load material data")[0]
-            .clone(),
-    );
+    // obj_data.push(
+    //     mesh::Mesh::from_obj("./ressources/42.obj").expect("Failed to load material data")[0]
+    //         .clone(),
+    // );
     println!(
         "\nMesh loaded with {} vertices and {} faces",
         obj_data
@@ -66,6 +73,31 @@ fn main() {
             .map(|submesh| submesh.mesh.index_count)
             .sum::<usize>()
     );
+
+    // ========================================================================
+    // Charger les textures en GPU
+    // ========================================================================
+    println!("\n=== Chargement des textures en GPU ===");
+    for submesh in &mut obj_data {
+        if let Some(mtl) = &mut submesh.material_data {
+            // Charger la texture diffuse
+            if let Some(texture) = &mut mtl.diffuse_texture_data {
+                match texture.load_to_gpu() {
+                    Ok(id) => println!("✓ Texture diffuse du matériau '{}' chargée (ID: {})", mtl.name, id),
+                    Err(e) => eprintln!("✗ Erreur lors du chargement de la texture diffuse: {}", e),
+                }
+            }
+            
+            // Charger la texture spéculaire
+            if let Some(texture) = &mut mtl.specular_texture_data {
+                match texture.load_to_gpu() {
+                    Ok(id) => println!("✓ Texture spéculaire du matériau '{}' chargée (ID: {})", mtl.name, id),
+                    Err(e) => eprintln!("✗ Erreur lors du chargement de la texture spéculaire: {}", e),
+                }
+            }
+        }
+    }
+    println!("=== Textures chargées ===\n");
 
     app.camera.init_view(&obj_data);
 
@@ -98,7 +130,7 @@ fn main() {
 
         // /*
         //temp shadertoy setter
-        if is_funny {
+        if is_funny == 0{
             unsafe {
                 // Pour iTime
                 let i_time_loc = gl::GetUniformLocation(shader.id, "iTime\0".as_ptr() as *const i8);
@@ -127,10 +159,26 @@ fn main() {
                 shader.set_uniform_vec3("materialDiffuse", &mtl.diffuse_color);
                 shader.set_uniform_vec3("materialSpecular", &mtl.specular_color);
                 shader.set_uniform_float("materialShininess", mtl.shininess);
+
+                // ====================================================================
+                // Binder et utiliser la texture diffuse si elle existe
+                // ====================================================================
+                if let Some(texture) = &mtl.diffuse_texture_data {
+                    if texture.texture_id.is_some() {
+                        texture.bind(0); // Bind au slot 0
+                        shader.set_uniform_int("diffuseTexture", 0); // Dire au shader d'utiliser le slot 0
+                        shader.set_uniform_bool("hasTexture", true);
+                    } else {
+                        shader.set_uniform_bool("hasTexture", false);
+                    }
+                } else {
+                    shader.set_uniform_bool("hasTexture", false);
+                }
             } else {
                 shader.set_uniform_vec3("materialDiffuse", &[1.0, 1.0, 1.0]);
                 shader.set_uniform_vec3("materialSpecular", &[1.0, 1.0, 1.0]);
                 shader.set_uniform_float("materialShininess", 32.0);
+                shader.set_uniform_bool("hasTexture", false);
             }
             submesh.mesh.draw();
         }
@@ -145,5 +193,15 @@ fn main() {
 
     for submesh in &obj_data {
         submesh.mesh.delete();
+        
+        // Supprimer les textures de la GPU
+        if let Some(mtl) = &submesh.material_data {
+            if let Some(texture) = &mtl.diffuse_texture_data {
+                texture.delete();
+            }
+            if let Some(texture) = &mtl.specular_texture_data {
+                texture.delete();
+            }
+        }
     }
 }
