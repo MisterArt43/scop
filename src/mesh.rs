@@ -1,10 +1,11 @@
-use crate::{ebo::EBO, vao::VAO, vbo::VBO, texture::Texture};
+use crate::{ebo::EBO, texture::Texture, vao::VAO, vbo::VBO};
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
 use std::{
     collections::HashMap,
     fs::{self},
     iter::Skip,
     mem::offset_of,
+    path::Path,
     ptr::null,
     str::SplitWhitespace,
     usize,
@@ -33,18 +34,18 @@ pub struct SubMesh {
 
 #[derive(Clone, Debug)]
 pub struct Mtl {
-    pub name: String,                     // name of the material
-    pub ambient_color: [f32; 3],          // Ka
-    pub diffuse_color: [f32; 3],          // Kd
-    pub specular_color: [f32; 3],         // Ks
-    pub shininess: f32,                   // Ns
-    pub diffuse_texture: Option<String>,  // map_Kd (chemin du fichier)
-    pub diffuse_texture_data: Option<Texture>, // Données de texture chargées
-    pub index_of_refraction: Option<f32>, // Ni
-    pub alpha: Option<f32>,               // d or Tr
-    pub specular_texture: Option<String>, // map_Km (chemin du fichier)
+    pub name: String,                           // name of the material
+    pub ambient_color: [f32; 3],                // Ka
+    pub diffuse_color: [f32; 3],                // Kd
+    pub specular_color: [f32; 3],               // Ks
+    pub shininess: f32,                         // Ns
+    pub diffuse_texture: Option<String>,        // map_Kd (chemin du fichier)
+    pub diffuse_texture_data: Option<Texture>,  // Données de texture chargées
+    pub index_of_refraction: Option<f32>,       // Ni
+    pub alpha: Option<f32>,                     // d or Tr
+    pub specular_texture: Option<String>,       // map_Km (chemin du fichier)
     pub specular_texture_data: Option<Texture>, // Données de texture chargées
-    pub illumination_model: Option<u32>,  // illum
+    pub illumination_model: Option<u32>,        // illum
 }
 
 pub struct Vertex {
@@ -236,7 +237,8 @@ impl Mesh {
 
                     //il faut pouvoir parser n-gones car f peut contenir de 3 a n vertices
 
-                    let mut face_indices: Vec<u32> = Vec::new();                    let current_face_index = builder.face_count;
+                    let mut face_indices: Vec<u32> = Vec::new();
+                    let current_face_index = builder.face_count;
                     builder.face_count += 1;
                     let parts = line.split_whitespace().skip(1); // découpe par vertice + skip le "f" du début
                     for part in parts {
@@ -266,8 +268,13 @@ impl Mesh {
                                 position: vertex_positions[key.v],
                                 normal: key.vn.map_or([0.0; 3], |vn_idx| vertex_normals[vn_idx]),
                                 uv: key.vt.map_or_else(
-                                    || Self::generate_uv_from_position(&vertex_positions[key.v], current_face_index),
-                                    |vt_idx| vertex_uvs[vt_idx]
+                                    || {
+                                        Self::generate_uv_from_position(
+                                            &vertex_positions[key.v],
+                                            current_face_index,
+                                        )
+                                    },
+                                    |vt_idx| vertex_uvs[vt_idx],
                                 ),
                                 color,
                             };
@@ -358,6 +365,103 @@ impl Mesh {
         mtl_data_map.get(name)
     }
 
+    fn parse_mtl_texture_path(line: &str) -> String {
+        let tokens: Vec<_> = line.split_whitespace().collect();
+        let mut index = 1;
+
+        while index < tokens.len() {
+            let token = tokens[index];
+            if token.starts_with('-') {
+                let extra = match token {
+                    "-s" | "-o" | "-t" => 3,
+                    "-mm" => 2,
+                    _ => 1,
+                };
+                let next = index + extra + 1;
+                if next < tokens.len() {
+                    index = next;
+                    continue;
+                }
+            }
+
+            return tokens[index..].join(" ");
+        }
+
+        tokens.get(1).copied().unwrap_or("default").to_string()
+    }
+
+    fn resolve_texture_path(obj_dir: &std::path::Path, texture_path: &str) -> std::path::PathBuf {
+        let candidate = obj_dir.join(texture_path.replace('\\', "/"));
+        if candidate.exists() {
+            return candidate;
+        }
+
+        let requested = Path::new(texture_path)
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_ascii_lowercase();
+        let requested_norm = Self::normalize_texture_name(&requested);
+
+        let mut matches = Vec::new();
+        Self::collect_texture_candidates(obj_dir, &mut matches);
+        matches.retain(|path| path.extension().map(|ext| ext.eq_ignore_ascii_case("bmp") || ext.eq_ignore_ascii_case("ppm") || ext.eq_ignore_ascii_case("png") || ext.eq_ignore_ascii_case("jpg")).unwrap_or(false));
+        matches.retain(|path| {
+            let name = path.file_stem().unwrap_or_default().to_string_lossy().to_ascii_lowercase();
+            let name_norm = Self::normalize_texture_name(&name);
+            Self::texture_names_match(&requested_norm, &name_norm)
+        });
+        matches.sort();
+        if let Some(path) = matches.into_iter().next() {
+            return path;
+        }
+
+        candidate
+    }
+
+    fn collect_texture_candidates(dir: &std::path::Path, matches: &mut Vec<std::path::PathBuf>) {
+        if let Ok(entries) = dir.read_dir() {
+            for entry in entries.filter_map(Result::ok) {
+                let path = entry.path();
+                if path.is_dir() {
+                    Self::collect_texture_candidates(&path, matches);
+                } else if path.is_file() {
+                    matches.push(path);
+                }
+            }
+        }
+    }
+
+    fn normalize_texture_name(name: &str) -> String {
+        let name = name
+            .replace("_", " ")
+            .replace('-', " ")
+            .replace('.', " ");
+        let mut chars = String::new();
+        for ch in name.chars() {
+            if ch.is_ascii_alphanumeric() || ch.is_ascii_whitespace() {
+                chars.push(ch.to_ascii_lowercase());
+            }
+        }
+        chars.split_whitespace().collect::<Vec<_>>().join("")
+    }
+
+    fn texture_names_match(requested: &str, candidate: &str) -> bool {
+        if requested.is_empty() || candidate.is_empty() {
+            return false;
+        }
+
+        if candidate.contains(requested) || requested.contains(candidate) {
+            return true;
+        }
+
+        let requested_without_alpha = requested.replace("alpha", "").replace("apha", "");
+        let candidate_without_alpha = candidate.replace("alpha", "").replace("apha", "");
+
+        candidate_without_alpha.contains(&requested_without_alpha)
+            || requested_without_alpha.contains(&candidate_without_alpha)
+    }
+
     fn parse_mtl(path: &str, obj_path: &str) -> Result<HashMap<String, Mtl>, String> {
         let obj_dir = std::path::Path::new(obj_path)
             .parent()
@@ -427,15 +531,12 @@ impl Mesh {
                 Some("map_Kd") => {
                     // diffuse texture
                     if let Some(mat) = &mut current_material {
-                        let texture_path = line
-                            .split_once(' ')
-                            .map(|(_, path)| path.trim().to_string())
-                            .unwrap_or_else(|| "default".to_string());
-                        
+                        let texture_path = Self::parse_mtl_texture_path(line);
+
                         // Construire le chemin complet
-                        let full_path = obj_dir.join(&texture_path);
+                        let full_path = Self::resolve_texture_path(obj_dir, &texture_path);
                         let full_path_str = full_path.to_string_lossy().to_string();
-                        
+
                         // Charger la texture
                         println!("Chargement de la texture diffuse: {}", full_path_str);
                         match Texture::new(&full_path_str) {
@@ -444,10 +545,13 @@ impl Mesh {
                                 println!("✓ Texture diffuse chargée avec succès");
                             }
                             Err(e) => {
-                                eprintln!("✗ Erreur lors du chargement de la texture diffuse: {}", e);
+                                eprintln!(
+                                    "✗ Erreur lors du chargement de la texture diffuse: {}",
+                                    e
+                                );
                             }
                         }
-                        
+
                         mat.diffuse_texture = Some(full_path_str);
                     }
                 }
@@ -475,15 +579,12 @@ impl Mesh {
                 Some("map_Ks") | Some("map_Km") | Some("Km") => {
                     // specular texture
                     if let Some(mat) = &mut current_material {
-                        let texture_path = line
-                            .split_once(' ')
-                            .map(|(_, path)| path.trim().to_string())
-                            .unwrap_or_else(|| "default".to_string());
-                        
+                        let texture_path = Self::parse_mtl_texture_path(line);
+
                         // Construire le chemin complet
-                        let full_path = obj_dir.join(&texture_path);
+                        let full_path = Self::resolve_texture_path(obj_dir, &texture_path);
                         let full_path_str = full_path.to_string_lossy().to_string();
-                        
+
                         // Charger la texture
                         println!("Chargement de la texture spéculaire: {}", full_path_str);
                         match Texture::new(&full_path_str) {
@@ -492,10 +593,13 @@ impl Mesh {
                                 println!("✓ Texture spéculaire chargée avec succès");
                             }
                             Err(e) => {
-                                eprintln!("✗ Erreur lors du chargement de la texture spéculaire: {}", e);
+                                eprintln!(
+                                    "✗ Erreur lors du chargement de la texture spéculaire: {}",
+                                    e
+                                );
                             }
                         }
-                        
+
                         mat.specular_texture = Some(full_path_str);
                     }
                 }
