@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use gl::{CULL_FACE, Viewport};
 
 use crate::{application::Application, shader::Shader};
@@ -17,6 +15,16 @@ pub mod vbo;
 pub mod bmp;
 
 fn main() {
+    let mut args: Vec<String> = std::env::args().collect();
+    if args.len() < 2 {
+        println!("Usage: {} <vertex_shader> <fragment_shader> <obj_file>", args[0]);
+        println!("Using default shaders and mesh...");
+        args.push(String::from("./shader/solid.vert"));
+        args.push(String::from("./shader/solid.frag"));
+    }
+    if args.len() < 4 {
+        args.push(String::from("./ressources/42.obj"));
+    }
     /*
      * Step 1 creation de la fenetre (glfw) et
      * du contexte pour opengl (gl_loader / gl)
@@ -26,21 +34,11 @@ fn main() {
     /*
      * Step 2 creation du shader (read --> compile --> link a CG)
      */
-    let is_funny = 2;
-    let vert_file;
-    let frag_file;
-    if is_funny == 0 {
-        frag_file = "./shader/funny.frag";
-        vert_file = "./shader/funny.vert";
-    } else if is_funny == 1 {
-        frag_file = "./shader/basic.frag";
-        vert_file = "./shader/basic.vert";
-    } else {
-        frag_file = "./shader/solid.frag";
-        vert_file = "./shader/solid.vert";
-    }
+    let vert_file = String::from(args[1].clone());
+    let frag_file= String::from(args[2].clone());
+
     println!("\n=== Chargement du shader ===\n Vertex: {}\nFragment: {}", vert_file, frag_file);
-    let shader = Shader::new(vert_file, frag_file).expect("Failed to load Shader files");
+    let shader = Shader::new(&vert_file, &frag_file).expect("Failed to load Shader files");
     // applique le shader (active le shader pour que les uniform(variables) et les textures soient pris en compte)
     shader.activate();
 
@@ -52,12 +50,8 @@ fn main() {
      * EBO : Element Buffer Object, buffer qui stocke les indices des vertices pour le dessin du mesh (permet de reutiliser les vertices voisin et d'eviter les duplications))
      */
 
-    let mut args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        args.push(String::from("./ressources/42.obj"));
-    }
 
-    let mut obj_data = mesh::Mesh::from_obj(&args[1]).expect("Failed to load mesh");
+    let mut obj_data = mesh::Mesh::from_obj(&args[3]).expect("Failed to load mesh");
     // obj_data.push(
     //     mesh::Mesh::from_obj("./ressources/42.obj").expect("Failed to load material data")[0]
     //         .clone(),
@@ -129,8 +123,7 @@ fn main() {
         }
 
         // /*
-        //temp shadertoy setter
-        if is_funny == 0{
+        //temp shadertoy setter 
             unsafe {
                 // Pour iTime
                 let i_time_loc = gl::GetUniformLocation(shader.id, "iTime\0".as_ptr() as *const i8);
@@ -146,7 +139,6 @@ fn main() {
                     gl::GetUniformLocation(shader.id, "iMouse\0".as_ptr() as *const i8);
                 gl::Uniform4f(i_mouse_loc, app.curpos.0, app.curpos.1, 0.0, 0.0);
             }
-        }
         // end temp
         // */
         unsafe {
