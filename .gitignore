@@ -5,3 +5,4 @@ scop
 *.txt
 .vscode/*
 /target
+.continue/*
