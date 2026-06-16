@@ -59,7 +59,10 @@ impl Texture {
                                 });
                             }
                         }
-                        println!("BMP chargé avec succès: {}x{}", texture.width, texture.height);
+                        println!(
+                            "BMP chargé avec succès: {}x{}",
+                            texture.width, texture.height
+                        );
                     }
                     Err(e) => {
                         return Err(format!("Erreur lors du chargement du BMP {}: {}", path, e));
@@ -93,26 +96,10 @@ impl Texture {
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
 
             // Configuration des paramètres de texture
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_S,
-                gl::REPEAT as i32,
-            );
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_WRAP_T,
-                gl::REPEAT as i32,
-            );
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_MIN_FILTER,
-                gl::LINEAR as i32,
-            );
-            gl::TexParameteri(
-                gl::TEXTURE_2D,
-                gl::TEXTURE_MAG_FILTER,
-                gl::LINEAR as i32,
-            );
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
 
             // Uploader les données à la GPU
             gl::TexImage2D(
