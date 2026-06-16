@@ -5,7 +5,6 @@ use std::collections::HashSet;
 
 use crate::camera::Camera;
 
-// ignore unused for now
 #[allow(unused)]
 pub struct Application {
     glfw: Glfw,
@@ -60,6 +59,8 @@ impl Application {
         };
         app.window.set_key_polling(true);
         app.window.make_current();
+        app.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
+        
 
         (&mut app).my_init_gl();
         app
