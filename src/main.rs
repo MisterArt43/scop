@@ -3,6 +3,7 @@ use gl::{CULL_FACE, Viewport};
 use crate::{application::Application, shader::Shader};
 
 pub mod application;
+pub mod bmp;
 pub mod camera;
 pub mod ebo;
 pub mod material;
@@ -12,13 +13,14 @@ pub mod shader;
 pub mod texture;
 pub mod vao;
 pub mod vbo;
-pub mod bmp;
-
 
 fn main() {
     let mut args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
-        println!("Usage: {} <vertex_shader> <fragment_shader> <obj_file>", args[0]);
+        println!(
+            "Usage: {} <vertex_shader> <fragment_shader> <obj_file>",
+            args[0]
+        );
         println!("Using default shaders and mesh...");
         args.push(String::from("./shader/solid.vert"));
         args.push(String::from("./shader/solid.frag"));
@@ -36,9 +38,12 @@ fn main() {
      * Step 2 creation du shader (read --> compile --> link a CG)
      */
     let vert_file = String::from(args[1].clone());
-    let frag_file= String::from(args[2].clone());
+    let frag_file = String::from(args[2].clone());
 
-    println!("\n=== Chargement du shader ===\n Vertex: {}\nFragment: {}", vert_file, frag_file);
+    println!(
+        "\n=== Chargement du shader ===\n Vertex: {}\nFragment: {}",
+        vert_file, frag_file
+    );
     let shader = Shader::new(&vert_file, &frag_file).expect("Failed to load Shader files");
     // applique le shader (active le shader pour que les uniform(variables) et les textures soient pris en compte)
     shader.activate();
@@ -50,7 +55,6 @@ fn main() {
      * VAO : Vertex Array Object, buffer qui stocke les configurations des attributs de vertex (en gros on definit l'ordre et les types des variables passées en buffer)
      * EBO : Element Buffer Object, buffer qui stocke les indices des vertices pour le dessin du mesh (permet de reutiliser les vertices voisin et d'eviter les duplications))
      */
-
 
     let mut obj_data = mesh::Mesh::from_obj(&args[3]).expect("Failed to load mesh");
     // obj_data.push(
@@ -78,16 +82,25 @@ fn main() {
             // Charger la texture diffuse
             if let Some(texture) = &mut mtl.diffuse_texture_data {
                 match texture.load_to_gpu() {
-                    Ok(id) => println!("✓ Texture diffuse du matériau '{}' chargée (ID: {})", mtl.name, id),
+                    Ok(id) => println!(
+                        "✓ Texture diffuse du matériau '{}' chargée (ID: {})",
+                        mtl.name, id
+                    ),
                     Err(e) => eprintln!("✗ Erreur lors du chargement de la texture diffuse: {}", e),
                 }
             }
-            
+
             // Charger la texture spéculaire
             if let Some(texture) = &mut mtl.specular_texture_data {
                 match texture.load_to_gpu() {
-                    Ok(id) => println!("✓ Texture spéculaire du matériau '{}' chargée (ID: {})", mtl.name, id),
-                    Err(e) => eprintln!("✗ Erreur lors du chargement de la texture spéculaire: {}", e),
+                    Ok(id) => println!(
+                        "✓ Texture spéculaire du matériau '{}' chargée (ID: {})",
+                        mtl.name, id
+                    ),
+                    Err(e) => eprintln!(
+                        "✗ Erreur lors du chargement de la texture spéculaire: {}",
+                        e
+                    ),
                 }
             }
         }
@@ -124,22 +137,21 @@ fn main() {
         }
 
         // /*
-        //temp shadertoy setter 
-            unsafe {
-                // Pour iTime
-                let i_time_loc = gl::GetUniformLocation(shader.id, "iTime\0".as_ptr() as *const i8);
-                gl::Uniform1f(i_time_loc, app.last_frame_time);
+        //temp shadertoy setter
+        unsafe {
+            // Pour iTime
+            let i_time_loc = gl::GetUniformLocation(shader.id, "iTime\0".as_ptr() as *const i8);
+            gl::Uniform1f(i_time_loc, app.last_frame_time);
 
-                // Pour iResolution
-                let i_resolution_loc =
-                    gl::GetUniformLocation(shader.id, "iResolution\0".as_ptr() as *const i8);
-                gl::Uniform3f(i_resolution_loc, fb_width as f32, fb_height as f32, 1.0);
+            // Pour iResolution
+            let i_resolution_loc =
+                gl::GetUniformLocation(shader.id, "iResolution\0".as_ptr() as *const i8);
+            gl::Uniform3f(i_resolution_loc, fb_width as f32, fb_height as f32, 1.0);
 
-                // Pour iMouse
-                let i_mouse_loc =
-                    gl::GetUniformLocation(shader.id, "iMouse\0".as_ptr() as *const i8);
-                gl::Uniform4f(i_mouse_loc, app.curpos.0, app.curpos.1, 0.0, 0.0);
-            }
+            // Pour iMouse
+            let i_mouse_loc = gl::GetUniformLocation(shader.id, "iMouse\0".as_ptr() as *const i8);
+            gl::Uniform4f(i_mouse_loc, app.curpos.0, app.curpos.1, 0.0, 0.0);
+        }
         // end temp
         // */
         unsafe {
@@ -186,7 +198,7 @@ fn main() {
 
     for submesh in &obj_data {
         submesh.mesh.delete();
-        
+
         // Supprimer les textures de la GPU
         if let Some(mtl) = &submesh.material_data {
             if let Some(texture) = &mtl.diffuse_texture_data {

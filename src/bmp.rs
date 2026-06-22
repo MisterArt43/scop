@@ -175,7 +175,8 @@ pub fn load_bmp<P: AsRef<Path>>(path: P) -> std::io::Result<BmpImage> {
 
     let palette_start = 14 + 40;
     let palette_len = if dib_header.bits_per_pixel < 24 {
-        let palette_colors = (dib_header.colors_used as usize).max(1usize << dib_header.bits_per_pixel);
+        let palette_colors =
+            (dib_header.colors_used as usize).max(1usize << dib_header.bits_per_pixel);
         palette_colors * 4
     } else {
         0
@@ -209,7 +210,12 @@ pub fn load_bmp<P: AsRef<Path>>(path: P) -> std::io::Result<BmpImage> {
 pub fn bmp_to_rgba(image: &BmpImage) -> Result<Vec<u8>, String> {
     let bits_per_pixel = image.dib_header.bits_per_pixel;
 
-    if bits_per_pixel != 1 && bits_per_pixel != 4 && bits_per_pixel != 8 && bits_per_pixel != 24 && bits_per_pixel != 32 {
+    if bits_per_pixel != 1
+        && bits_per_pixel != 4
+        && bits_per_pixel != 8
+        && bits_per_pixel != 24
+        && bits_per_pixel != 32
+    {
         return Err(format!(
             "Format {} bits pas encore implémenté",
             bits_per_pixel
@@ -235,11 +241,21 @@ pub fn bmp_to_rgba(image: &BmpImage) -> Result<Vec<u8>, String> {
             for col in 0..width {
                 let pixel_index = col * bits_per_pixel as usize / 8;
                 let bit_offset = (col * bits_per_pixel as usize) % 8;
-                let byte = image.pixels.get(row_start + pixel_index).copied().unwrap_or(0);
+                let byte = image
+                    .pixels
+                    .get(row_start + pixel_index)
+                    .copied()
+                    .unwrap_or(0);
 
                 let shift = match bits_per_pixel {
                     1 => 7 - bit_offset,
-                    4 => if col & 1 == 0 { 4 } else { 0 },
+                    4 => {
+                        if col & 1 == 0 {
+                            4
+                        } else {
+                            0
+                        }
+                    }
                     8 => 0,
                     _ => 0,
                 };
@@ -252,15 +268,16 @@ pub fn bmp_to_rgba(image: &BmpImage) -> Result<Vec<u8>, String> {
                 };
 
                 let palette_entry = palette_index * 4;
-                let (r, g, b, a) = if palette_entry + 4 <= image.palette.len() && palette_index < palette_colors {
-                    let b0 = image.palette[palette_entry];
-                    let g0 = image.palette[palette_entry + 1];
-                    let r0 = image.palette[palette_entry + 2];
-                    let a0 = image.palette[palette_entry + 3];
-                    (r0, g0, b0, a0)
-                } else {
-                    (255, 255, 255, 255)
-                };
+                let (r, g, b, a) =
+                    if palette_entry + 4 <= image.palette.len() && palette_index < palette_colors {
+                        let b0 = image.palette[palette_entry];
+                        let g0 = image.palette[palette_entry + 1];
+                        let r0 = image.palette[palette_entry + 2];
+                        let a0 = image.palette[palette_entry + 3];
+                        (r0, g0, b0, a0)
+                    } else {
+                        (255, 255, 255, 255)
+                    };
 
                 rgba.push(r);
                 rgba.push(g);
