@@ -118,12 +118,18 @@ fn main() {
 
     // compute camera distance after scaling so big objects don't push the camera too far
 
+    let mut old_width: i32 = 0;
+    let mut old_height: i32 = 0;
     while !app.window.should_close() {
         app.update_delta_time();
         let (fb_width, fb_height) = app.window.get_framebuffer_size();
+        let to_rerender = fb_width != old_width || fb_height != old_height;
 
+        
         // Set up matrices BEFORE rendering
-        if fb_height > 0 {
+        if fb_height > 0 && (to_rerender || app.to_rerender) { // opti;isqtion pour évité de rerender si les dimensions (to_render) et / ou la cam n'a pas bougé (app.to_render)
+            //optimize by checking if camera or dimensions changed
+
             app.camera
                 .update_view_and_projection(fb_width as f32, fb_height as f32);
 
@@ -135,6 +141,11 @@ fn main() {
             shader.set_uniform_vec3("viewPos", &eye_pos.to_array());
             shader.set_uniform_vec3("lightColor", &[1.0, 1.0, 1.0]);
         }
+
+        old_height = fb_height;
+        old_width = fb_width;
+        app.to_rerender = false;
+        
 
         // /*
         //temp shadertoy setter
