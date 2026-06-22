@@ -8,7 +8,6 @@ use crate::{
 };
 
 // ignore unused for now
-#[allow(unused)]
 pub struct Camera {
     pub transform: Transform,
     field_of_view: f32,

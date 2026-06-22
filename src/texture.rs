@@ -1,11 +1,5 @@
-use std::{
-    fs::File,
-    io::{BufRead, BufReader},
-};
-
 use crate::bmp;
 
-#[allow(unused)]
 #[derive(Clone, Debug)]
 pub struct Pixel {
     r: u8,
@@ -14,10 +8,8 @@ pub struct Pixel {
     a: u8,
 }
 
-#[allow(unused)]
 #[derive(Clone, Debug)]
 pub struct Texture {
-    file_path: String,
     pub width: u32,
     pub height: u32,
     pixels: Vec<Pixel>,
@@ -31,7 +23,6 @@ pub struct Texture {
 impl Texture {
     pub fn new(path: &str) -> Result<Texture, String> {
         let mut texture = Texture {
-            file_path: path.to_string(),
             width: 0,
             height: 0,
             pixels: Vec::new(),
@@ -39,9 +30,6 @@ impl Texture {
         };
 
         match find_image_format(path) {
-            Some("ppm") => {
-                texture.pixels = parse_ppm(path);
-            }
             Some("bmp") => {
                 // Parse BMP en appelant le parser depuis bmp.rs
                 match bmp::load_bmp_as_texture(path) {
@@ -162,23 +150,4 @@ fn find_image_format(path: &str) -> Option<&str> {
     } else {
         None
     }
-}
-
-#[allow(unused_variables)]
-#[allow(unused_mut)]
-fn parse_ppm(path: &str) -> Vec<Pixel> {
-    // open file, read header, read pixel data
-    let file = File::open(path).expect("Failed to open PPM file");
-    let mut reader = BufReader::new(file);
-    let mut header = String::new();
-    reader
-        .read_line(&mut header)
-        .expect("Failed to read PPM header");
-
-    let mut width = 0;
-    let mut height = 0;
-    let mut max_color = 0;
-    let mut format = String::new();
-
-    Vec::new()
 }

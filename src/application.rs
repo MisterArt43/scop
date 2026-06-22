@@ -5,14 +5,13 @@ use std::{collections::HashSet, time::{Duration, Instant}};
 
 use crate::camera::Camera;
 
-#[allow(unused)]
 pub struct Application {
     glfw: Glfw,
     pub(crate) window: PWindow,
     events: GlfwReceiver<(f64, WindowEvent)>,
     pressed_keys: HashSet<glfw::Key>,
-    width: f32,
-    height: f32,
+    pub width: i32,
+    pub height: i32,
 
     last_time: Instant,
 
@@ -20,7 +19,6 @@ pub struct Application {
     pub last_frame_time: f32,
     pub to_rerender: bool,
 
-    name: String,
     pub curpos: (f32, f32),
     pub(crate) camera: Camera,
 }
@@ -54,11 +52,10 @@ impl Application {
             glfw: glfw,
             window: window,
             events: events,
-            width,
-            height,
+            width: 0,
+            height: 0,
             delta_time: 0.0,
             last_time: Instant::now(),
-            name: String::from(name),
             curpos: (0.0, 0.0),
             camera: Camera::new(),
             pressed_keys: HashSet::new(),

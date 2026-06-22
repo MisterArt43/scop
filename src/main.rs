@@ -118,12 +118,10 @@ fn main() {
 
     // compute camera distance after scaling so big objects don't push the camera too far
 
-    let mut old_width: i32 = 0;
-    let mut old_height: i32 = 0;
     while !app.window.should_close() {
         app.update_delta_time();
         let (fb_width, fb_height) = app.window.get_framebuffer_size();
-        let to_rerender = fb_width != old_width || fb_height != old_height;
+        let to_rerender = fb_width != app.width || fb_height != app.height;
 
         
         // Set up matrices BEFORE rendering
@@ -142,8 +140,8 @@ fn main() {
             shader.set_uniform_vec3("lightColor", &[1.0, 1.0, 1.0]);
         }
 
-        old_height = fb_height;
-        old_width = fb_width;
+        app.height = fb_height;
+        app.width = fb_width;
         app.to_rerender = false;
         
 
