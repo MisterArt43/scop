@@ -1,5 +1,5 @@
-use crate::{ebo::EBO, vao::VAO, vbo::VBO};
 use crate::mesh::{Vertex, parser};
+use crate::{ebo::EBO, material::Mtl, vao::VAO, vbo::VBO};
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
 use std::mem::{offset_of, size_of};
 use std::ptr::null;
@@ -20,7 +20,7 @@ pub struct SubMesh {
     pub object: String,
     pub group: String,
     pub material: String,
-    pub material_data: Option<super::material::Mtl>,
+    pub material_data: Option<Mtl>,
     pub mesh: Mesh,
 }
 
@@ -30,8 +30,12 @@ impl Mesh {
         let mut bbox_max = [std::f32::NEG_INFINITY; 3];
         for v in vertices {
             for i in 0..3 {
-                if v.position[i] < bbox_min[i] { bbox_min[i] = v.position[i]; }
-                if v.position[i] > bbox_max[i] { bbox_max[i] = v.position[i]; }
+                if v.position[i] < bbox_min[i] {
+                    bbox_min[i] = v.position[i];
+                }
+                if v.position[i] > bbox_max[i] {
+                    bbox_max[i] = v.position[i];
+                }
             }
         }
 
@@ -48,10 +52,38 @@ impl Mesh {
         mesh.vao.bind();
         mesh.ebo.bind();
 
-        mesh.vao.link_attrib(&mesh.vbo, 0, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, position));
-        mesh.vao.link_attrib(&mesh.vbo, 1, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, normal));
-        mesh.vao.link_attrib(&mesh.vbo, 2, 2, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, uv));
-        mesh.vao.link_attrib(&mesh.vbo, 3, 3, FLOAT, size_of::<Vertex>() as i32, offset_of!(Vertex, color));
+        mesh.vao.link_attrib(
+            &mesh.vbo,
+            0,
+            3,
+            FLOAT,
+            size_of::<Vertex>() as i32,
+            offset_of!(Vertex, position),
+        );
+        mesh.vao.link_attrib(
+            &mesh.vbo,
+            1,
+            3,
+            FLOAT,
+            size_of::<Vertex>() as i32,
+            offset_of!(Vertex, normal),
+        );
+        mesh.vao.link_attrib(
+            &mesh.vbo,
+            2,
+            2,
+            FLOAT,
+            size_of::<Vertex>() as i32,
+            offset_of!(Vertex, uv),
+        );
+        mesh.vao.link_attrib(
+            &mesh.vbo,
+            3,
+            3,
+            FLOAT,
+            size_of::<Vertex>() as i32,
+            offset_of!(Vertex, color),
+        );
 
         mesh.vao.unbind();
         mesh.vbo.unbind();
@@ -59,9 +91,15 @@ impl Mesh {
         mesh
     }
 
-    pub fn bind(&self) { self.vao.bind(); }
-    pub fn unbind(&self) { self.vao.unbind(); }
-    pub fn get_index_count(&self) -> usize { self.index_count }
+    pub fn bind(&self) {
+        self.vao.bind();
+    }
+    pub fn unbind(&self) {
+        self.vao.unbind();
+    }
+    pub fn get_index_count(&self) -> usize {
+        self.index_count
+    }
 
     pub fn draw(&self) {
         self.vao.bind();

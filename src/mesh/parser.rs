@@ -1,4 +1,8 @@
-use crate::mesh::{Mesh, SubMesh, Vertex, vertex::{VertexKey, ObjIndex}, material::Mtl};
+use crate::material::Mtl;
+use crate::mesh::{
+    Mesh, SubMesh, Vertex,
+    vertex::{ObjIndex, VertexKey},
+};
 use std::collections::HashMap;
 use std::fs;
 
@@ -44,7 +48,8 @@ impl Builder {
 }
 
 pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
-    let obj_file = fs::read_to_string(path).map_err(|e| format!("Failed to read .obj file: {}", e))?;
+    let obj_file =
+        fs::read_to_string(path).map_err(|e| format!("Failed to read .obj file: {}", e))?;
     let mut mtl_data_map: HashMap<String, Mtl> = HashMap::new();
     let mut builder = Builder::new();
 
@@ -72,21 +77,32 @@ pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
                     let raw_key = parse_face(part);
                     let key = VertexKey {
                         v: resolve_vertex_index(raw_key.v, vertex_positions.len()),
-                        vt: raw_key.vt.map(|i| resolve_vertex_index(i, vertex_uvs.len())),
-                        vn: raw_key.vn.map(|i| resolve_vertex_index(i, vertex_normals.len())),
+                        vt: raw_key
+                            .vt
+                            .map(|i| resolve_vertex_index(i, vertex_uvs.len())),
+                        vn: raw_key
+                            .vn
+                            .map(|i| resolve_vertex_index(i, vertex_normals.len())),
                     };
 
                     let idx = if let Some(&existing_idx) = builder.map.get(&key) {
                         existing_idx
                     } else {
                         let mut color = vertex_colors[key.v].unwrap_or([1.0; 3]);
-                        if color == [0.0, 0.0, 0.0] { color = [1.0; 3]; }
+                        if color == [0.0, 0.0, 0.0] {
+                            color = [1.0; 3];
+                        }
 
                         let vertex = Vertex {
                             position: vertex_positions[key.v],
                             normal: key.vn.map_or([0.0; 3], |vn_idx| vertex_normals[vn_idx]),
                             uv: key.vt.map_or_else(
-                                || generate_uv_from_position(&vertex_positions[key.v], current_face_index),
+                                || {
+                                    generate_uv_from_position(
+                                        &vertex_positions[key.v],
+                                        current_face_index,
+                                    )
+                                },
                                 |vt_idx| vertex_uvs[vt_idx],
                             ),
                             color,
@@ -110,21 +126,33 @@ pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
             }
             Some("o") => {
                 flush_builder_if_needed(&mut builder, &mut meshes);
-                builder.object = line.split_once(' ').map(|(_, n)| n.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                builder.object = line
+                    .split_once(' ')
+                    .map(|(_, n)| n.trim().to_string())
+                    .unwrap_or_else(|| "default".to_string());
             }
             Some("g") => {
                 flush_builder_if_needed(&mut builder, &mut meshes);
-                builder.group = line.split_once(' ').map(|(_, n)| n.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                builder.group = line
+                    .split_once(' ')
+                    .map(|(_, n)| n.trim().to_string())
+                    .unwrap_or_else(|| "default".to_string());
             }
             Some("mtllib") => {
-                let mtl_path = line.split_once(' ').map(|(_, p)| p.trim()).unwrap_or("default.mtl");
+                let mtl_path = line
+                    .split_once(' ')
+                    .map(|(_, p)| p.trim())
+                    .unwrap_or("default.mtl");
                 if let Ok(materials) = Mtl::parse_mtl(mtl_path, path) {
                     mtl_data_map.extend(materials);
                 }
             }
             Some("usemtl") => {
                 flush_builder_if_needed(&mut builder, &mut meshes);
-                builder.material = line.split_once(' ').map(|(_, n)| n.trim().to_string()).unwrap_or_else(|| "default".to_string());
+                builder.material = line
+                    .split_once(' ')
+                    .map(|(_, n)| n.trim().to_string())
+                    .unwrap_or_else(|| "default".to_string());
                 builder.material_data = mtl_data_map.get(&builder.material).cloned();
             }
             _ => {}
@@ -149,7 +177,11 @@ fn flush_builder_if_needed(builder: &mut Builder, meshes: &mut Vec<SubMesh>) {
 
 fn resolve_vertex_index(obj_index: i32, len: usize) -> usize {
     let len_i32 = len as i32;
-    let resolved = if obj_index < 0 { len_i32 + obj_index } else { obj_index - 1 };
+    let resolved = if obj_index < 0 {
+        len_i32 + obj_index
+    } else {
+        obj_index - 1
+    };
     if resolved < 0 || resolved >= len_i32 {
         panic!("Vertex index out of bounds: {}, len: {}", resolved, len);
     }
@@ -158,9 +190,24 @@ fn resolve_vertex_index(obj_index: i32, len: usize) -> usize {
 
 fn parse_face(token: &str) -> ObjIndex {
     let mut it = token.split('/');
-    let v = it.next().and_then(|s| s.parse::<i32>().ok()).expect("Failed to parse vertex index");
-    let vt = it.next().and_then(|s| if s.is_empty() { None } else { s.parse::<i32>().ok() });
-    let vn = it.next().and_then(|s| if s.is_empty() { None } else { s.parse::<i32>().ok() });
+    let v = it
+        .next()
+        .and_then(|s| s.parse::<i32>().ok())
+        .expect("Failed to parse vertex index");
+    let vt = it.next().and_then(|s| {
+        if s.is_empty() {
+            None
+        } else {
+            s.parse::<i32>().ok()
+        }
+    });
+    let vn = it.next().and_then(|s| {
+        if s.is_empty() {
+            None
+        } else {
+            s.parse::<i32>().ok()
+        }
+    });
     ObjIndex { v, vt, vn }
 }
 
@@ -182,16 +229,31 @@ fn parse_v(token: std::iter::Skip<std::str::SplitWhitespace<'_>>) -> ([f32; 3], 
 
 fn parse_vec3(mut parts: std::iter::Skip<std::str::SplitWhitespace<'_>>) -> [f32; 3] {
     [
-        parts.next().and_then(|s| s.parse::<f32>().ok()).unwrap_or(0.0),
-        parts.next().and_then(|s| s.parse::<f32>().ok()).unwrap_or(0.0),
-        parts.next().and_then(|s| s.parse::<f32>().ok()).unwrap_or(0.0),
+        parts
+            .next()
+            .and_then(|s| s.parse::<f32>().ok())
+            .unwrap_or(0.0),
+        parts
+            .next()
+            .and_then(|s| s.parse::<f32>().ok())
+            .unwrap_or(0.0),
+        parts
+            .next()
+            .and_then(|s| s.parse::<f32>().ok())
+            .unwrap_or(0.0),
     ]
 }
 
 fn parse_vec2(mut parts: std::iter::Skip<std::str::SplitWhitespace<'_>>) -> [f32; 2] {
     [
-        parts.next().and_then(|s| s.parse::<f32>().ok()).unwrap_or(0.0),
-        parts.next().and_then(|s| s.parse::<f32>().ok()).unwrap_or(0.0),
+        parts
+            .next()
+            .and_then(|s| s.parse::<f32>().ok())
+            .unwrap_or(0.0),
+        parts
+            .next()
+            .and_then(|s| s.parse::<f32>().ok())
+            .unwrap_or(0.0),
     ]
 }
 
