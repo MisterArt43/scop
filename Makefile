@@ -1,4 +1,4 @@
-NAME := scope
+NAME := scop
 CARGO := cargo
 
 ifeq ($(OS),Windows_NT)
