@@ -1,8 +1,8 @@
-# Scope
+# Scop
 
-Scope est un visualiseur 3D ecrit en Rust avec OpenGL. Il charge un fichier OBJ, lit ses materiaux MTL, cree les buffers GPU necessaires au rendu, puis affiche le modele dans une fenetre GLFW.
+Scop est un visualiseur 3D ecrit en Rust avec OpenGL. Il charge un fichier OBJ, lit ses materiaux MTL, cree les buffers GPU necessaires au rendu, puis affiche le modele dans une fenetre GLFW.
 
-Le binaire genere par le projet s'appelle `scope`.
+Le binaire genere par le projet s'appelle `scop`.
 
 ## Compilation
 
@@ -12,18 +12,18 @@ Le projet utilise Cargo, mais un Makefile est fourni pour les commandes attendue
 make
 ```
 
-La regle par defaut construit le binaire et copie l'executable a la racine du projet sous le nom `scope`.
+La regle par defaut construit le binaire et copie l'executable a la racine du projet sous le nom `scop`.
 
 Commandes utiles:
 
 ```sh
-make all      # compile scope avec la regle par defaut
-make debug    # compile scope en debug
-make release  # compile scope en release
+make all      # compile scop avec la regle par defaut
+make debug    # compile scop en debug
+make release  # compile scop en release
 make run      # compile puis lance le visualiseur avec les valeurs par defaut
 make check    # verifie le projet sans produire de binaire final
 make clean    # nettoie les artefacts Cargo
-make fclean   # nettoie les artefacts Cargo et supprime ./scope
+make fclean   # nettoie les artefacts Cargo et supprime ./scop
 make re       # reconstruit depuis zero
 ```
 
@@ -32,13 +32,13 @@ make re       # reconstruit depuis zero
 Sans argument, le programme utilise les shaders et le modele par defaut:
 
 ```sh
-./scope
+./scop
 ```
 
 Il est aussi possible de fournir un vertex shader, un fragment shader et un fichier OBJ:
 
 ```sh
-./scope ./shader/solid.vert ./shader/solid.frag ./ressources/42.obj
+./scop ./shader/solid.vert ./shader/solid.frag ./ressources/42.obj
 ```
 
 ## Controles
