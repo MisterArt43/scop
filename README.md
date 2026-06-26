@@ -1,5 +1,7 @@
 # Scop
 
+This project has been created as part of the 42 curriculum by abucia
+
 Scop est un visualiseur 3D ecrit en Rust avec OpenGL. Il charge un fichier OBJ, lit ses materiaux MTL, cree les buffers GPU necessaires au rendu, puis affiche le modele dans une fenetre GLFW.
 
 Le binaire genere par le projet s'appelle `scop`.
@@ -104,3 +106,8 @@ Les modeles et textures de test sont dans `ressources/`. Le modele charge par de
 ```
 
 Les textures actuellement prises en charge par le code sont les fichiers BMP. Le chemin des textures est resolu relativement au fichier OBJ/MTL, avec une recherche par nom quand le chemin exact ne correspond pas.
+
+## IA
+
+j'ai beaucoup utilisé en autocompletion avec qwen 2.5-coder 7B fine tune pour le rust via continue.dev (auto hebergé), 
+la pluspart de mes recherche ont été faites sur le site de opengl directement (certain liens sont même référencé dans le code) et [learnopengl.com](https://learnopengl.com), enfin une partie du parsing des texture a été refacto par IA
