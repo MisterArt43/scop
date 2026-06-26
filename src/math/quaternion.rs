@@ -195,6 +195,11 @@ impl Quaternion {
         }
     }
 
+    pub fn get_pitch(&self) -> f32 {
+        let fwd_y = self.rotate_vector(FORWARD).y.clamp(-1.0, 1.0);
+        fwd_y.asin()
+    }
+
     pub fn rotate_yaw(&mut self, angle: f32) {
         // Yaw around global up (world Y)
         // Use negative angle so positive input rotates camera to the right (FPS convention)
@@ -202,9 +207,19 @@ impl Quaternion {
         *self = q.mul(self).normalize();
     }
 
+    pub fn get_yaw(&self) -> f32 {
+        let fwd = self.rotate_vector(FORWARD);
+        fwd.z.atan2(fwd.x)
+    }
+
     pub fn rotate_roll(&mut self, angle: f32) {
         let q = Quaternion::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), angle);
         *self = q.mul(self).normalize();
+    }
+
+    pub fn get_roll(&self) -> f32 {
+        let right = self.rotate_vector(RIGHT);
+        right.y.atan2(right.x)
     }
 
     pub fn rotate_around_axis(&mut self, axis: Vec3, angle: f32) {

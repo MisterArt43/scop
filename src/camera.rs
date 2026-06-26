@@ -123,6 +123,13 @@ impl Camera {
         }
     }
 
+    pub fn process_mouse_movement (&mut self, xpos: f32, ypos: f32) {
+        // Rotate around the camera's local right axis for pitch
+        self.transform.rotation.rotate_pitch(-ypos);
+        // Rotate around the global up axis for yaw
+        self.transform.rotation.rotate_yaw(-xpos);    
+    }
+
     pub fn eye_position(&self) -> Vec3 {
         self.eye_position
     }

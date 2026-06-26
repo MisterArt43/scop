@@ -61,9 +61,13 @@ impl Application {
             pressed_keys: HashSet::new(),
         };
         app.window.set_key_polling(true);
+        app.window.set_cursor_pos_polling(true);
         // app.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
         app.glfw.set_swap_interval(glfw::SwapInterval::None);
         app.window.make_current();
+        app.window.set_cursor_mode(glfw::CursorMode::Disabled);
+        app.window.set_cursor_pos(width as f64 / 2.0, height as f64 / 2.0);
+        app.window.request_attention();
 
         (&mut app).my_init_gl();
         app
@@ -124,7 +128,7 @@ impl Application {
                         self.pressed_keys.remove(&key);
                     }
 
-                    if key == glfw::Key::LeftAlt {
+                    if key == glfw::Key::LeftControl {
                         unsafe {
                             if action == glfw::Action::Release {
                                 gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
@@ -132,6 +136,15 @@ impl Application {
                                 gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
                             }
                         }
+                    }
+                    if key == glfw::Key::LeftAlt {
+                            if action == glfw::Action::Release {
+                                //Disable mouse capture
+                                self.window.set_cursor_mode(glfw::CursorMode::Disabled);
+                            } else if action == glfw::Action::Press {
+                                //Enable mouse capture
+                                self.window.set_cursor_mode(glfw::CursorMode::Normal);
+                            }
                     }
                     if key == glfw::Key::LeftShift {
                         unsafe {
@@ -161,6 +174,17 @@ impl Application {
                     }
                 }
                 WindowEvent::CursorPos(xpos, ypos) => {
+                    let xoffset = self.curpos.0 - xpos as f32;
+                    let yoffset = ypos as f32 - self.curpos.1; // reversed since y-coordinates go from bottom to top
+                    let sensitivity = 0.5; // change this value to your liking
+                    let xoffset = xoffset * sensitivity;
+                    let yoffset = yoffset * sensitivity;
+
+                    if self.window.get_cursor_mode() == glfw::CursorMode::Disabled {
+                        self.camera.process_mouse_movement(xoffset * self.delta_time, yoffset * self.delta_time);
+                        self.to_rerender = true;
+                    }
+
                     self.curpos = (xpos as f32, ypos as f32);
                 }
                 _ => {}
@@ -174,6 +198,7 @@ impl Application {
         let zoom_speed = 1.2 * self.delta_time; // Adjust as needed
         let move_speed = 1.0 * self.delta_time * self.camera.camera_distance; // Adjust as needed
         let rotation_speed = 2.0 * self.delta_time * self.camera.camera_distance; // Adjust as needed
+
         if self.pressed_keys.contains(&glfw::Key::W) {
             self.camera.move_forward(move_speed);
             self.to_rerender = true;
