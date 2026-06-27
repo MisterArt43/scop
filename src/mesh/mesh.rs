@@ -1,4 +1,4 @@
-use crate::math::transform::{self, Transform};
+use crate::math::transform::{Transform};
 use crate::mesh::{Vertex, parser};
 use crate::{ebo::EBO, material::Mtl, vao::VAO, vbo::VBO};
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
@@ -24,6 +24,20 @@ pub struct SubMesh {
     pub material_data: Option<Mtl>,
     pub mesh: Mesh,
     pub transform: Transform,
+}
+
+pub struct Actor {
+    pub submesh: Vec<SubMesh>,
+    pub transform: Transform,
+}
+
+impl Actor {
+    pub fn new(submesh: Vec<SubMesh>, transform: Option<Transform>) -> Actor {
+        Actor {
+            submesh,
+            transform: transform.unwrap_or_else(Transform::new),
+        }
+    }
 }
 
 impl Mesh {
@@ -129,7 +143,7 @@ impl SubMesh {
             material,
             material_data,
             mesh,
-            transform: Transform::identity(),
+            transform: Transform::new(),
         }
     }
 

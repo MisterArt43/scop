@@ -3,7 +3,7 @@ use gl_loader::init_gl;
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent, WindowHint};
 use std::{collections::HashSet, time::{Duration, Instant}};
 
-use crate::camera::Camera;
+use crate::{camera::Camera, mesh::mesh::Actor};
 
 pub struct Application {
     glfw: Glfw,
@@ -21,6 +21,7 @@ pub struct Application {
 
     pub curpos: (f32, f32),
     pub(crate) camera: Camera,
+    pub selected_object: Option<Actor>,
 }
 
 impl Application {
@@ -59,6 +60,7 @@ impl Application {
             curpos: (0.0, 0.0),
             camera: Camera::new(),
             pressed_keys: HashSet::new(),
+            selected_object: None,
         };
         app.window.set_key_polling(true);
         app.window.set_cursor_pos_polling(true);
