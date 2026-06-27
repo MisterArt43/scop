@@ -1,4 +1,5 @@
 use crate::material::Mtl;
+use crate::math::transform::Transform;
 use crate::mesh::{
     Mesh, SubMesh, Vertex,
     vertex::{ObjIndex, VertexKey},
@@ -170,6 +171,7 @@ fn flush_builder_if_needed(builder: &mut Builder, meshes: &mut Vec<SubMesh>) {
             material: builder.material.clone(),
             mesh: Mesh::new(&builder.vertices, &builder.indices),
             material_data: builder.material_data.clone(),
+            transform: Transform::new(),
         });
         builder.clear();
     }
