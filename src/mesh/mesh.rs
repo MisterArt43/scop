@@ -1,3 +1,4 @@
+use crate::math::transform::{self, Transform};
 use crate::mesh::{Vertex, parser};
 use crate::{ebo::EBO, material::Mtl, vao::VAO, vbo::VBO};
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
@@ -22,6 +23,7 @@ pub struct SubMesh {
     pub material: String,
     pub material_data: Option<Mtl>,
     pub mesh: Mesh,
+    pub transform: Transform,
 }
 
 impl Mesh {
@@ -116,5 +118,26 @@ impl Mesh {
         self.vao.delete();
         self.vbo.delete();
         self.ebo.delete();
+    }
+}
+
+impl SubMesh {
+    pub fn new(object: String, group: String, material: String, material_data: Option<Mtl>, mesh: Mesh) -> SubMesh {
+        SubMesh {
+            object,
+            group,
+            material,
+            material_data,
+            mesh,
+            transform: Transform::identity(),
+        }
+    }
+
+    pub fn draw(&self) {
+        self.mesh.draw();
+    }
+
+    pub fn delete(&self) {
+        self.mesh.delete();
     }
 }
