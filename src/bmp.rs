@@ -17,6 +17,7 @@ pub struct BmpFileHeader {
 /// Contient les informations sur l'image
 #[derive(Debug, Clone)]
 pub struct BmpDibHeader {
+    pub header_size: u32,      // Taille du DIB header
     pub width: i32,            // Largeur en pixels
     pub height: i32,           // Hauteur en pixels
     pub planes: u16,           // Doit toujours être 1
@@ -98,8 +99,8 @@ fn parse_file_header<R: Read>(reader: &mut R) -> std::io::Result<BmpFileHeader> 
 // ============================================================================
 
 fn parse_dib_header<R: Read>(reader: &mut R) -> std::io::Result<BmpDibHeader> {
-    // Bytes 0-3 : header_size (on le lit mais on l'ignore pour cette version)
-    let _header_size = read_u32_le(reader)?;
+    // Bytes 0-3 : header_size (taille du DIB header)
+    let header_size = read_u32_le(reader)?;
 
     // Bytes 4-7 : width
     let width = read_i32_le(reader)?;
@@ -144,6 +145,7 @@ fn parse_dib_header<R: Read>(reader: &mut R) -> std::io::Result<BmpDibHeader> {
     let colors_important = read_u32_le(reader)?;
 
     Ok(BmpDibHeader {
+        header_size,
         width,
         height,
         planes,
@@ -173,7 +175,7 @@ pub fn load_bmp<P: AsRef<Path>>(path: P) -> std::io::Result<BmpImage> {
     let dib_header = parse_dib_header(&mut reader)?;
     println!("DIB header parsé: {:?}", dib_header);
 
-    let palette_start = 14 + 40;
+    let palette_start = 14 + dib_header.header_size as usize;
     let palette_len = if dib_header.bits_per_pixel < 24 {
         let palette_colors =
             (dib_header.colors_used as usize).max(1usize << dib_header.bits_per_pixel);
