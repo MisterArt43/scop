@@ -1,0 +1,26 @@
+# tv.mtl
+# Matériaux extraits du .obj : Material.002, None
+
+newmtl Material.002
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+d 1.0
+illum 2
+map_Kd ../textures/tv_tv_BaseColor.bmp
+map_Ks ../textures/tv_tv_Metallic.bmp
+map_Bump ../textures/tv_tv_Normal.tga.bmp
+map_d ../textures/tv_tv_Opacity.tga.bmp
+# Roughness map (charge si le loader supporte les textures non standard)
+# map_Pr ../textures/tv_tv_Roughness.bmp
+
+newmtl None
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+d 1.0
+illum 2
+map_Kd ../textures/tv_Screen_BaseColor.bmp
+map_Ks ../textures/tv_Screen_Metallic.bmp
+# Roughness map (optionnel)
+# map_Pr ../textures/tv_Screen_Roughness.bmp
