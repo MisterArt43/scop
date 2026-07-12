@@ -10,4 +10,5 @@ d 1.000000
 illum 2
 Pr 0.250000
 Pm 0.000000
+# map_Kd /home/abucia/Documents/GitHub/scop/ressources/retro-television/textures/tv_tv_BaseColor.bmp
 map_Kd Intergalactic Spaceship_color_4.bmp
