@@ -1,4 +1,4 @@
-use crate::math::transform::{Transform};
+use crate::math::transform::Transform;
 use crate::mesh::{Vertex, parser};
 use crate::{ebo::EBO, material::Mtl, vao::VAO, vbo::VBO};
 use gl::{DrawElements, FLOAT, TRIANGLES, UNSIGNED_INT};
@@ -136,7 +136,13 @@ impl Mesh {
 }
 
 impl SubMesh {
-    pub fn new(object: String, group: String, material: String, material_data: Option<Mtl>, mesh: Mesh) -> SubMesh {
+    pub fn new(
+        object: String,
+        group: String,
+        material: String,
+        material_data: Option<Mtl>,
+        mesh: Mesh,
+    ) -> SubMesh {
         SubMesh {
             object,
             group,

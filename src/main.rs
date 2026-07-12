@@ -83,10 +83,12 @@ fn main() {
             if let Some(texture) = &mut mtl.diffuse_texture_data {
                 match texture.load_to_gpu() {
                     Ok(id) => println!(
-                        "✓ Texture diffuse du matériau '{}' chargée (ID: {})",
+                        " - Texture diffuse du matériau '{}' chargée (ID: {})",
                         mtl.name, id
                     ),
-                    Err(e) => eprintln!("✗ Erreur lors du chargement de la texture diffuse: {}", e),
+                    Err(e) => {
+                        eprintln!(" - Erreur lors du chargement de la texture diffuse: {}", e)
+                    }
                 }
             }
 
@@ -94,11 +96,11 @@ fn main() {
             if let Some(texture) = &mut mtl.specular_texture_data {
                 match texture.load_to_gpu() {
                     Ok(id) => println!(
-                        "✓ Texture spéculaire du matériau '{}' chargée (ID: {})",
+                        " - Texture spéculaire du matériau '{}' chargée (ID: {})",
                         mtl.name, id
                     ),
                     Err(e) => eprintln!(
-                        "✗ Erreur lors du chargement de la texture spéculaire: {}",
+                        " - Erreur lors du chargement de la texture spéculaire: {}",
                         e
                     ),
                 }
@@ -123,9 +125,9 @@ fn main() {
         let (fb_width, fb_height) = app.window.get_framebuffer_size();
         let to_rerender = fb_width != app.width || fb_height != app.height;
 
-        
         // Set up matrices BEFORE rendering
-        if fb_height > 0 && (to_rerender || app.to_rerender) { // opti;isqtion pour évité de rerender si les dimensions (to_render) et / ou la cam n'a pas bougé (app.to_render)
+        if fb_height > 0 && (to_rerender || app.to_rerender) {
+            // opti;isqtion pour évité de rerender si les dimensions (to_render) et / ou la cam n'a pas bougé (app.to_render)
             //optimize by checking if camera or dimensions changed
 
             app.camera
@@ -143,7 +145,6 @@ fn main() {
         app.height = fb_height;
         app.width = fb_width;
         app.to_rerender = false;
-        
 
         // /*
         //temp shadertoy setter
@@ -161,6 +162,8 @@ fn main() {
             let i_mouse_loc = gl::GetUniformLocation(shader.id, "iMouse\0".as_ptr() as *const i8);
             gl::Uniform4f(i_mouse_loc, app.curpos.0, app.curpos.1, 0.0, 0.0);
         }
+
+        check_gl_error(line!());
         // end temp
         // */
         unsafe {
@@ -168,32 +171,74 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
         }
 
-        for submesh in &obj_data {
+        shader.activate();
+
+        for (index, submesh) in obj_data.iter().enumerate() {
+            // On commence par nettoyer les slots de texture au début de CHAQUE mesh
+            unsafe {
+                gl::ActiveTexture(gl::TEXTURE0);
+                gl::BindTexture(gl::TEXTURE_2D, 0);
+                gl::ActiveTexture(gl::TEXTURE1);
+                gl::BindTexture(gl::TEXTURE_2D, 0);
+            }
+            shader.set_uniform_bool("hasDiffuse", false);
+            shader.set_uniform_bool("hasSpecular", false);
+
             if let Some(mtl) = &submesh.material_data {
                 shader.set_uniform_vec3("materialDiffuse", &mtl.diffuse_color);
                 shader.set_uniform_vec3("materialSpecular", &mtl.specular_color);
                 shader.set_uniform_float("materialShininess", mtl.shininess);
 
-                // ====================================================================
-                // Binder et utiliser la texture diffuse si elle existe
-                // ====================================================================
+                let mode = mtl.illumination_model.unwrap_or(0) as i32;
+                shader.set_uniform_int("illuminationModel", mode);
+
+                // 1. Texture Diffuse
                 if let Some(texture) = &mtl.diffuse_texture_data {
-                    if texture.texture_id.is_some() {
-                        texture.bind(0); // Bind au slot 0
-                        shader.set_uniform_int("diffuseTexture", 0); // Dire au shader d'utiliser le slot 0
-                        shader.set_uniform_bool("hasTexture", true);
-                    } else {
-                        shader.set_uniform_bool("hasTexture", false);
+                    if let Some(id) = texture.texture_id {
+                        unsafe {
+                            gl::ActiveTexture(gl::TEXTURE0);
+                            gl::BindTexture(gl::TEXTURE_2D, 1);
+                            println!(
+                                " - Submesh {} {} using diffuse texture with ID: {}",
+                                index, submesh.material, id
+                            );
+                        }
+                        shader.set_uniform_int("diffuseTexture", 0);
+                        shader.set_uniform_bool("hasDiffuse", true);
                     }
-                } else {
-                    shader.set_uniform_bool("hasTexture", false);
                 }
+
+                // 2. Texture Spéculaire
+                if let Some(texture) = &mtl.specular_texture_data {
+                    if let Some(id) = texture.texture_id {
+                        unsafe {
+                            gl::ActiveTexture(gl::TEXTURE1);
+                            gl::BindTexture(gl::TEXTURE_2D, id);
+                        }
+                        shader.set_uniform_int("specularTexture", 1);
+                        shader.set_uniform_bool("hasSpecular", true);
+                    }
+                }
+
+                let ambient = if mtl.ambient_color != [0.0, 0.0, 0.0] {
+                    mtl.ambient_color
+                } else {
+                    [0.1, 0.1, 0.1]
+                };
+                shader.set_uniform_vec3("materialAmbient", &ambient);
+                shader.set_uniform_float("materialAlpha", mtl.alpha.unwrap_or(1.0));
             } else {
+                // Matériau par défaut si None
                 shader.set_uniform_vec3("materialDiffuse", &[1.0, 1.0, 1.0]);
                 shader.set_uniform_vec3("materialSpecular", &[1.0, 1.0, 1.0]);
                 shader.set_uniform_float("materialShininess", 32.0);
-                shader.set_uniform_bool("hasTexture", false);
+                shader.set_uniform_int("illuminationModel", 1);
+                shader.set_uniform_vec3("materialAmbient", &[0.1, 0.1, 0.1]);
+                shader.set_uniform_float("materialAlpha", 1.0);
             }
+
+            // [IMPORTANT] L'appel de dessin se fait TOUJOURS immédiatement après
+            // que l'état OpenGL propre à CE submesh a été envoyé.
             submesh.mesh.draw();
         }
 
@@ -216,6 +261,26 @@ fn main() {
             if let Some(texture) = &mtl.specular_texture_data {
                 texture.delete();
             }
+        }
+    }
+}
+
+fn check_gl_error(line: u32) {
+    unsafe {
+        let mut error = gl::GetError();
+        while error != gl::NO_ERROR {
+            let error_str = match error {
+                gl::INVALID_ENUM => "INVALID_ENUM",
+                gl::INVALID_VALUE => "INVALID_VALUE",
+                gl::INVALID_OPERATION => "INVALID_OPERATION",
+                gl::STACK_OVERFLOW => "STACK_OVERFLOW",
+                gl::STACK_UNDERFLOW => "STACK_UNDERFLOW",
+                gl::OUT_OF_MEMORY => "OUT_OF_MEMORY",
+                gl::INVALID_FRAMEBUFFER_OPERATION => "INVALID_FRAMEBUFFER_OPERATION",
+                _ => "UNKNOWN_ERROR",
+            };
+            eprintln!("🔴 [OpenGL Error] {} à la ligne {}", error_str, line);
+            error = gl::GetError(); // On continue de vider si plusieurs erreurs
         }
     }
 }

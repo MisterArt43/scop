@@ -1,7 +1,10 @@
 use gl::{CULL_FACE, ClearDepth, DEPTH_TEST, DepthFunc, Disable, Enable};
 use gl_loader::init_gl;
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent, WindowHint};
-use std::{collections::HashSet, time::{Duration, Instant}};
+use std::{
+    collections::HashSet,
+    time::{Duration, Instant},
+};
 
 use crate::{camera::Camera, mesh::mesh::Actor};
 
@@ -64,11 +67,12 @@ impl Application {
         };
         app.window.set_key_polling(true);
         app.window.set_cursor_pos_polling(true);
+        app.window.make_current();
         // app.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
         app.glfw.set_swap_interval(glfw::SwapInterval::None);
-        app.window.make_current();
         app.window.set_cursor_mode(glfw::CursorMode::Disabled);
-        app.window.set_cursor_pos(width as f64 / 2.0, height as f64 / 2.0);
+        app.window
+            .set_cursor_pos(width as f64 / 2.0, height as f64 / 2.0);
         app.window.request_attention();
 
         (&mut app).my_init_gl();
@@ -100,7 +104,8 @@ impl Application {
         let elapsed = self.last_time.elapsed();
 
         if elapsed >= Duration::from_millis(300) {
-            self.window.set_title(&format!("Scop - {:.0}", 1.0 / self.delta_time.max(0.00001)));
+            self.window
+                .set_title(&format!("Scop - {:.0}", 1.0 / self.delta_time.max(0.00001)));
 
             self.last_time = Instant::now();
         }
@@ -123,7 +128,6 @@ impl Application {
             match event {
                 WindowEvent::Close => self.window.set_should_close(true),
                 WindowEvent::Key(key, _scancode, action, _mods) => {
-                    
                     if action == glfw::Action::Press {
                         self.pressed_keys.insert(key);
                     } else if action == glfw::Action::Release {
@@ -140,13 +144,13 @@ impl Application {
                         }
                     }
                     if key == glfw::Key::LeftAlt {
-                            if action == glfw::Action::Release {
-                                //Disable mouse capture
-                                self.window.set_cursor_mode(glfw::CursorMode::Disabled);
-                            } else if action == glfw::Action::Press {
-                                //Enable mouse capture
-                                self.window.set_cursor_mode(glfw::CursorMode::Normal);
-                            }
+                        if action == glfw::Action::Release {
+                            //Disable mouse capture
+                            self.window.set_cursor_mode(glfw::CursorMode::Disabled);
+                        } else if action == glfw::Action::Press {
+                            //Enable mouse capture
+                            self.window.set_cursor_mode(glfw::CursorMode::Normal);
+                        }
                     }
                     if key == glfw::Key::LeftShift {
                         unsafe {
@@ -183,7 +187,10 @@ impl Application {
                     let yoffset = yoffset * sensitivity;
 
                     if self.window.get_cursor_mode() == glfw::CursorMode::Disabled {
-                        self.camera.process_mouse_movement(xoffset * self.delta_time, yoffset * self.delta_time);
+                        self.camera.process_mouse_movement(
+                            xoffset * self.delta_time,
+                            yoffset * self.delta_time,
+                        );
                         self.to_rerender = true;
                     }
 

@@ -89,7 +89,7 @@ impl Camera {
         self.projection = Mat4::perspective(self.field_of_view, aspec, 0.001, 500.0);
 
         ///////////////////
-        //  FREE CAMERA ///
+        // FREE CAMERA ///
         ///////////////////
         if self.mode == 0 {
             self.eye_position = self.transform.position;
@@ -101,7 +101,7 @@ impl Camera {
             self.view = Mat4::look_at(self.eye_position, target, up);
         }
         ///////////////////
-        //  FREE CAMERA ///
+        // FREE CAMERA ///
         ///////////////////
 
         /////////////////////
@@ -123,11 +123,11 @@ impl Camera {
         }
     }
 
-    pub fn process_mouse_movement (&mut self, xpos: f32, ypos: f32) {
+    pub fn process_mouse_movement(&mut self, xpos: f32, ypos: f32) {
         // Rotate around the camera's local right axis for pitch
         self.transform.rotation.rotate_pitch(-ypos);
         // Rotate around the global up axis for yaw
-        self.transform.rotation.rotate_yaw(-xpos);    
+        self.transform.rotation.rotate_yaw(-xpos);
     }
 
     pub fn eye_position(&self) -> Vec3 {

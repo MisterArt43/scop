@@ -48,7 +48,7 @@ impl Texture {
                             }
                         }
                         println!(
-                            "BMP chargé avec succès: {}x{}",
+                            " - BMP chargé avec succès: {}x{}",
                             texture.width, texture.height
                         );
                     }
@@ -107,7 +107,7 @@ impl Texture {
         }
 
         self.texture_id = Some(texture_id);
-        println!("✓ Texture GPU chargée avec l'ID: {}", texture_id);
+        println!(" - Texture GPU chargée avec l'ID: {}", texture_id);
 
         Ok(texture_id)
     }
