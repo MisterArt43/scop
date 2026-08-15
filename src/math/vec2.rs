@@ -11,39 +11,39 @@ impl Vec2 {
         Vec2 { x, y }
     }
 
-    pub fn add(&self, other: &Vec2) -> Vec2 {
+    pub fn add(self, other: &Vec2) -> Vec2 {
         Vec2 {
             x: self.x + other.x,
             y: self.y + other.y,
         }
     }
 
-    pub fn sub(&self, other: &Vec2) -> Vec2 {
+    pub fn sub(self, other: &Vec2) -> Vec2 {
         Vec2 {
             x: self.x - other.x,
             y: self.y - other.y,
         }
     }
 
-    pub fn mul(&self, scalar: f32) -> Vec2 {
+    pub fn mul(self, scalar: f32) -> Vec2 {
         Vec2 {
             x: self.x * scalar,
             y: self.y * scalar,
         }
     }
 
-    pub fn div(&self, scalar: f32) -> Vec2 {
+    pub fn div(self, scalar: f32) -> Vec2 {
         Vec2 {
             x: self.x / scalar,
             y: self.y / scalar,
         }
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(self) -> f32 {
         (self.x * self.x + self.y * self.y).sqrt()
     }
 
-    pub fn normalize(&self) -> Vec2 {
+    pub fn normalize(self) -> Vec2 {
         let len = self.length();
         if len > 0.0 {
             self.div(len)
@@ -52,7 +52,7 @@ impl Vec2 {
         }
     }
 
-    pub fn dot(&self, other: &Vec2) -> f32 {
+    pub fn dot(self, other: &Vec2) -> f32 {
         self.x * other.x + self.y * other.y
     }
 }

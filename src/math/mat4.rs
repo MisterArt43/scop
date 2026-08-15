@@ -20,7 +20,7 @@ impl Mat4 {
         m
     }
 
-    pub fn mul(&self, other: &Mat4) -> Mat4 {
+    pub fn mul(self, other: &Mat4) -> Mat4 {
         let mut result = Mat4::new();
         for i in 0..4 {
             for j in 0..4 {
@@ -32,7 +32,7 @@ impl Mat4 {
         result
     }
 
-    pub fn transpose(&self) -> Mat4 {
+    pub fn transpose(self) -> Mat4 {
         let mut result = Mat4::new();
         for i in 0..4 {
             for j in 0..4 {
@@ -42,7 +42,7 @@ impl Mat4 {
         result
     }
 
-    pub fn inverse(&self) -> Option<Mat4> {
+    pub fn inverse(self) -> Option<Mat4> {
         // Inversion d'une matrice 4x4 (implémentation simplifiée, pas optimisée)
         let mut inv = Mat4::new();
         let mut det: f32;
@@ -86,11 +86,11 @@ impl Mat4 {
         }
     }
 
-    pub fn as_ptr(&self) -> *const f32 {
+    pub fn as_ptr(self) -> *const f32 {
         self.data.as_ptr() as *const f32
     }
 
-    pub fn to_flat_array(&self) -> [f32; 16] {
+    pub fn to_flat_array(self) -> [f32; 16] {
         // Store as-is (row-major) - OpenGL will interpret as column-major
         // because we use GL_FALSE in glUniformMatrix4fv
         let mut out = [0.0f32; 16];

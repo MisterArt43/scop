@@ -28,15 +28,15 @@ impl Transform {
         self.scale = scale;
     }
 
-    pub fn get_position(&self) -> Vec3 {
+    pub fn get_position(self) -> Vec3 {
         self.position
     }
 
-    pub fn get_rotation(&self) -> Quaternion {
+    pub fn get_rotation(self) -> Quaternion {
         self.rotation
     }
 
-    pub fn get_scale(&self) -> Vec3 {
+    pub fn get_scale(self) -> Vec3 {
         self.scale
     }
 
@@ -58,7 +58,7 @@ impl Transform {
         self.scale = Vec3::new(1.0, 1.0, 1.0);
     }
 
-    pub fn lerp(&self, other: &Transform, t: f32) -> Transform {
+    pub fn lerp(self, other: &Transform, t: f32) -> Transform {
         Transform {
             position: self.position.mul(1.0 - t).add(&other.position.mul(t)),
             rotation: self

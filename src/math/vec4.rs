@@ -13,7 +13,7 @@ impl Vec4 {
         Vec4 { x, y, z, w }
     }
 
-    pub fn add(&self, other: &Vec4) -> Vec4 {
+    pub fn add(self, other: &Vec4) -> Vec4 {
         Vec4 {
             x: self.x + other.x,
             y: self.y + other.y,
@@ -22,7 +22,7 @@ impl Vec4 {
         }
     }
 
-    pub fn sub(&self, other: &Vec4) -> Vec4 {
+    pub fn sub(self, other: &Vec4) -> Vec4 {
         Vec4 {
             x: self.x - other.x,
             y: self.y - other.y,
@@ -31,7 +31,7 @@ impl Vec4 {
         }
     }
 
-    pub fn mul(&self, scalar: f32) -> Vec4 {
+    pub fn mul(self, scalar: f32) -> Vec4 {
         Vec4 {
             x: self.x * scalar,
             y: self.y * scalar,
@@ -40,7 +40,7 @@ impl Vec4 {
         }
     }
 
-    pub fn div(&self, scalar: f32) -> Vec4 {
+    pub fn div(self, scalar: f32) -> Vec4 {
         Vec4 {
             x: self.x / scalar,
             y: self.y / scalar,
@@ -49,11 +49,11 @@ impl Vec4 {
         }
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt()
     }
 
-    pub fn normalize(&self) -> Vec4 {
+    pub fn normalize(self) -> Vec4 {
         let len = self.length();
         if len > 0.0 {
             self.div(len)
@@ -62,7 +62,7 @@ impl Vec4 {
         }
     }
 
-    pub fn cross(&self, other: &Vec4) -> Vec4 {
+    pub fn cross(self, other: &Vec4) -> Vec4 {
         Vec4 {
             x: self.y * other.z - self.z * other.y,
             y: self.z * other.x - self.x * other.z,
@@ -71,7 +71,7 @@ impl Vec4 {
         }
     }
 
-    pub fn dot(&self, other: &Vec4) -> f32 {
+    pub fn dot(self, other: &Vec4) -> f32 {
         self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
     }
 }

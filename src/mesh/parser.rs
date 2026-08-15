@@ -61,14 +61,16 @@ pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
     let mut meshes = Vec::new();
 
     for line in obj_file.lines() {
-        match line.split_whitespace().next() {
+        let mut line_thing = line.split_whitespace();
+        let obj_token = line_thing.next();
+        match obj_token {
             Some("v") => {
-                let (pos, col) = parse_v(line.split_whitespace().skip(1));
+                let (pos, col) = parse_v(line_thing);
                 vertex_positions.push(pos);
                 vertex_colors.push(col);
             }
-            Some("vn") => vertex_normals.push(parse_vec3(line.split_whitespace().skip(1))),
-            Some("vt") => vertex_uvs.push(parse_vec2(line.split_whitespace().skip(1))),
+            Some("vn") => vertex_normals.push(parse_vec3(line_thing)),
+            Some("vt") => vertex_uvs.push(parse_vec2(line_thing)),
             Some("f") => {
                 let mut face_indices = Vec::new();
                 let current_face_index = builder.face_count;
@@ -213,9 +215,8 @@ fn parse_face(token: &str) -> ObjIndex {
     ObjIndex { v, vt, vn }
 }
 
-fn parse_v(token: std::iter::Skip<std::str::SplitWhitespace<'_>>) -> ([f32; 3], Option<[f32; 3]>) {
-    let position = parse_vec3(token.clone());
-    let mut token = token.skip(3);
+fn parse_v<'a>(mut token: impl Iterator<Item = &'a str>) -> ([f32; 3], Option<[f32; 3]>) {
+    let position = parse_vec3(&mut token);
     let color = [
         token.next().and_then(|s| s.parse::<f32>().ok()),
         token.next().and_then(|s| s.parse::<f32>().ok()),
@@ -229,7 +230,7 @@ fn parse_v(token: std::iter::Skip<std::str::SplitWhitespace<'_>>) -> ([f32; 3], 
     (position, color)
 }
 
-fn parse_vec3(mut parts: std::iter::Skip<std::str::SplitWhitespace<'_>>) -> [f32; 3] {
+fn parse_vec3<'a>(mut parts: impl Iterator<Item = &'a str>) -> [f32; 3] {
     [
         parts
             .next()
@@ -246,7 +247,7 @@ fn parse_vec3(mut parts: std::iter::Skip<std::str::SplitWhitespace<'_>>) -> [f32
     ]
 }
 
-fn parse_vec2(mut parts: std::iter::Skip<std::str::SplitWhitespace<'_>>) -> [f32; 2] {
+fn parse_vec2<'a>(mut parts: impl Iterator<Item = &'a str>) -> [f32; 2] {
     [
         parts
             .next()

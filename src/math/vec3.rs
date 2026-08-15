@@ -12,7 +12,7 @@ impl Vec3 {
         Vec3 { x, y, z }
     }
 
-    pub fn add(&self, other: &Vec3) -> Vec3 {
+    pub fn add(self, other: &Vec3) -> Vec3 {
         Vec3 {
             x: self.x + other.x,
             y: self.y + other.y,
@@ -20,7 +20,7 @@ impl Vec3 {
         }
     }
 
-    pub fn sub(&self, other: &Vec3) -> Vec3 {
+    pub fn sub(self, other: &Vec3) -> Vec3 {
         Vec3 {
             x: self.x - other.x,
             y: self.y - other.y,
@@ -28,14 +28,14 @@ impl Vec3 {
         }
     }
 
-    pub fn mul(&self, scalar: f32) -> Vec3 {
+    pub fn mul(self, scalar: f32) -> Vec3 {
         Vec3 {
             x: self.x * scalar,
             y: self.y * scalar,
             z: self.z * scalar,
         }
     }
-    pub fn mul_vec(&self, other: &Vec3) -> Vec3 {
+    pub fn mul_vec(self, other: &Vec3) -> Vec3 {
         Vec3 {
             x: self.x * other.x,
             y: self.y * other.y,
@@ -43,7 +43,7 @@ impl Vec3 {
         }
     }
 
-    pub fn div(&self, scalar: f32) -> Vec3 {
+    pub fn div(self, scalar: f32) -> Vec3 {
         Vec3 {
             x: self.x / scalar,
             y: self.y / scalar,
@@ -51,11 +51,11 @@ impl Vec3 {
         }
     }
 
-    pub fn length(&self) -> f32 {
+    pub fn length(self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
 
-    pub fn normalize(&self) -> Vec3 {
+    pub fn normalize(self) -> Vec3 {
         let len = self.length();
         if len > 0.0 {
             self.div(len)
@@ -67,7 +67,7 @@ impl Vec3 {
     /**
      * Calcul du produit vectoriel entre deux vecteurs 3D https://www.youtube.com/watch?v=CWiClwqwnvg
      */
-    pub fn cross(&self, other: &Vec3) -> Vec3 {
+    pub fn cross(self, other: &Vec3) -> Vec3 {
         Vec3 {
             x: self.y * other.z - self.z * other.y,
             y: self.z * other.x - self.x * other.z,
@@ -75,11 +75,11 @@ impl Vec3 {
         }
     }
 
-    pub fn dot(&self, other: &Vec3) -> f32 {
+    pub fn dot(self, other: &Vec3) -> f32 {
         self.x * other.x + self.y * other.y + self.z * other.z
     }
 
-    pub fn mul_scalar(&self, scalar: f32) -> Vec3 {
+    pub fn mul_scalar(self, scalar: f32) -> Vec3 {
         Vec3 {
             x: self.x * scalar,
             y: self.y * scalar,
@@ -87,7 +87,7 @@ impl Vec3 {
         }
     }
 
-    pub fn forward(&self) -> Vec3 {
+    pub fn forward(self) -> Vec3 {
         Vec3 {
             x: self.y.cos() * self.x.cos(),
             y: self.x.sin(),
@@ -95,7 +95,7 @@ impl Vec3 {
         }
     }
 
-    pub fn right(&self) -> Vec3 {
+    pub fn right(self) -> Vec3 {
         Vec3 {
             x: self.y.cos() * (self.x + std::f32::consts::FRAC_PI_2).cos(),
             y: (self.x + std::f32::consts::FRAC_PI_2).sin(),
@@ -103,11 +103,11 @@ impl Vec3 {
         }
     }
 
-    pub fn up(&self) -> Vec3 {
-        self.forward().cross(&self.right())
+    pub fn up(self) -> Vec3 {
+        self.forward().cross(self.right())
     }
 
-    pub fn to_array(&self) -> [f32; 3] {
+    pub fn to_array(self) -> [f32; 3] {
         [self.x, self.y, self.z]
     }
 }
