@@ -1,4 +1,4 @@
-use std::{collections::HashSet, time::{Duration, Instant}};
+use std::{time::{Duration, Instant}};
 
 use glfw::{Context, WindowHint::ContextVersion, ffi::glfwTerminate};
 
@@ -10,7 +10,6 @@ pub struct Application {
     pub(crate) window: glfw::PWindow,
     events: glfw::GlfwReceiver<(f64, glfw::WindowEvent)>,
     pub event_handler: app_event::AppEvent,
-    pressed_keys: HashSet<glfw::Key>,
     pub width: i32,
     pub height: i32,
 
@@ -19,8 +18,6 @@ pub struct Application {
     delta_time: f32,
     pub last_frame_time: f32,
     pub to_rerender: bool,
-
-    pub curpos: (f32, f32),
 }
 
 impl Application {
@@ -60,21 +57,20 @@ impl Application {
             event_handler: app_event::AppEvent::new(),
             width: 0,
             height: 0,
-            pressed_keys: HashSet::new(),
             delta_time: 0.0,
             last_time: Instant::now(),
             to_rerender: true,
-            curpos: (0.0, 0.0),
         };
-        app.window.set_key_polling(true);
-        app.window.set_cursor_pos_polling(true);
+
+        app.event_handler.init_glfw_events(&mut app.window);
         app.window.make_current();
+
         // swap les commentaire pour activer ou desactiver le vsync
         app.glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
         // app.glfw.set_swap_interval(glfw::SwapInterval::None);
-        app.window.set_cursor_mode(glfw::CursorMode::Disabled);
-        app.window
-            .set_cursor_pos(f64::from(width) / 2.0, f64::from(height) / 2.0);
+
+        // app.window.set_cursor_mode(glfw::CursorMode::Disabled); // rendre invisible le curseur de mq souris
+        app.window.set_cursor_pos(f64::from(width) / 2.0, f64::from(height) / 2.0);
         app.window.request_attention();
 
         app.my_init_gl();
@@ -122,97 +118,7 @@ impl Application {
     }
 
     pub fn handle_events(&mut self) {
-        // iterate over all pending events
-        // poll GLFW to populate the event queue, then iterate over all pending events
-        self.glfw.poll_events();
-        for (_id, event) in glfw::flush_messages(&self.events) {
-            // println!("Event: {:?}", event);
-            match event {
-                glfw::WindowEvent::Close => self.window.set_should_close(true),
-                glfw::WindowEvent::Key(key, _scancode, action, _mods) => {
-                    if action == glfw::Action::Press {
-                        self.pressed_keys.insert(key);
-                    } else if action == glfw::Action::Release {
-                        self.pressed_keys.remove(&key);
-                    }
-
-                    if key == glfw::Key::LeftControl {
-                        unsafe {
-                            if action == glfw::Action::Release {
-                                gl::PolygonMode(gl::FRONT_AND_BACK, gl::FILL);
-                            } else if action == glfw::Action::Press {
-                                gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE);
-                            }
-                        }
-                    }
-                    if key == glfw::Key::LeftAlt {
-                        if action == glfw::Action::Release {
-                            //Disable mouse capture
-                            self.window.set_cursor_mode(glfw::CursorMode::Disabled);
-                        } else if action == glfw::Action::Press {
-                            //Enable mouse capture
-                            self.window.set_cursor_mode(glfw::CursorMode::Normal);
-                        }
-                    }
-                    if key == glfw::Key::LeftShift {
-                        unsafe {
-                            if action == glfw::Action::Release {
-                                gl::Enable(gl::CULL_FACE);
-                            } else if action == glfw::Action::Press {
-                                gl::Disable(gl::CULL_FACE);
-                            }
-                        }
-                    }
-
-                    if key == glfw::Key::C && action == glfw::Action::Press {
-                        self.to_rerender = true;
-                        // self.camera.mode = (self.camera.mode + 1) % 2;
-                        // println!(
-                        //     "Camera mode: {}",
-                        //     if self.camera.mode == 0 {
-                        //         "Free"
-                        //     } else {
-                        //         "Look-At"
-                        //     }
-                        // );
-                    }
-
-                    if key == glfw::Key::Escape && action == glfw::Action::Press {
-                        self.window.set_should_close(true);
-                    }
-                }
-                glfw::WindowEvent::CursorPos(xpos, ypos) => {
-                    let xoffset = self.curpos.0 - xpos as f32;
-                    let yoffset = ypos as f32 - self.curpos.1; // reversed since y-coordinates go from bottom to top
-                    let sensitivity = 0.5; // change this value to your liking
-                    let _xoffset = xoffset * sensitivity;
-                    let _yoffset = yoffset * sensitivity;
-
-                    if self.window.get_cursor_mode() == glfw::CursorMode::Disabled {
-                        // self.camera.process_mouse_movement(
-                        //     xoffset * self.delta_time,
-                        //     yoffset * self.delta_time,
-                        // );
-                        // self.to_rerender = true;
-                    }
-
-                    self.curpos = (xpos as f32, ypos as f32);
-                }
-                glfw::WindowEvent::FramebufferSize(width, height) => {
-                    self.width = width;
-                    self.height = height;
-                    unsafe {
-                        gl::Viewport(0, 0, width, height);
-                    }
-                }
-                _ => {}
-            }
-        }
-        self.update();
-    }
-
-    pub fn update(&mut self) {
-        
+        self.event_handler.handle_event(&mut self.glfw, &mut self.window, &self.events);
     }
 }
 

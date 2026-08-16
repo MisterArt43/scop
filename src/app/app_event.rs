@@ -5,13 +5,18 @@ use glfw::PWindow;
 pub struct AppEvent {
     pub input: InputEvent,
     pub frame_buffer_size: (i32, i32),
-
+    pub focus: bool,
+    pub iconified: bool, // Indique si la fenêtre est minimize
+    pub cursor_entered: bool,
+    pub file_dropped: Option<Vec<PathBuf>>,
+    pub maximized: bool,
+    should_close: bool,
 }
 
 pub struct InputEvent {
     pub key_pressed: HashSet<glfw::Key>,
     pub key_released: HashSet<glfw::Key>,
-    pub mouse_moved: Option<(f64, f64)>,
+    pub mouse_moved: Option<(f64, f64)>, // curpos
     pub mouse_scrolled: Option<(f64, f64)>,
     pub mouse_button_pressed: HashSet<glfw::MouseButton>,
     pub mouse_button_released: HashSet<glfw::MouseButton>,
@@ -52,46 +57,62 @@ impl AppEvent {
     pub fn new() -> Self {
         AppEvent {
             input: InputEvent::new(),
+            frame_buffer_size: (0, 0),
+            focus: false,
+            iconified: false,
+            cursor_entered: false,
+            file_dropped: None,
+            maximized: false,
+            should_close: false,
         }
     }
 
-    pub fn handle_event(&mut self, event: glfw::WindowEvent, window: PWindow) {
-        match event {
-            glfw::WindowEvent::CursorEnter(enter) => {
-                self.cursor_enter_event(enter);
+    pub fn init_glfw_events(&mut self, window: &mut PWindow) {
+        window.set_close_polling(true);
+        window.set_focus_polling(true);
+        window.set_iconify_polling(true);
+        window.set_framebuffer_size_polling(true);
+        window.set_mouse_button_polling(true);
+        window.set_cursor_pos_polling(true);
+        window.set_cursor_enter_polling(true);
+        window.set_scroll_polling(true);
+        window.set_key_polling(true);
+        window.set_drag_and_drop_polling(true);
+        window.set_maximize_polling(true);
+    }
+
+    pub fn handle_event(
+        &mut self,
+        glfw: &mut glfw::Glfw,
+        window: &mut PWindow,
+        events: &glfw::GlfwReceiver<(f64, glfw::WindowEvent)>,
+    ) {
+        glfw.poll_events();
+        for (_id, event) in glfw::flush_messages(&events) {
+            match event {
+                glfw::WindowEvent::Close => { self.close_event(window); }
+                glfw::WindowEvent::Focus(focused) => { self.focus_event(focused); }
+                glfw::WindowEvent::Iconify(iconified) => { self.iconify_event(iconified); }
+                glfw::WindowEvent::FramebufferSize(width, height) => { self.framebuffer_size_event(width, height); }
+                glfw::WindowEvent::MouseButton(button, action, mods) => { self.mouse_button_event(button, action, mods); }
+                glfw::WindowEvent::CursorPos(x, y) => { self.mouse_move_event(x, y); }
+                glfw::WindowEvent::CursorEnter(enter) => { self.cursor_enter_event(enter); }
+                glfw::WindowEvent::Scroll(x, y) => { self.mouse_scroll_event(x, y); }
+                glfw::WindowEvent::Key(key, _scancode, action, mods) => { self.key_event(key, action, mods); }
+                glfw::WindowEvent::FileDrop(paths) => { self.file_drop_event(paths); }
+                glfw::WindowEvent::Maximize(maximized) => { self.maximize_event(maximized); }
+                _ => {}
             }
-            glfw::WindowEvent::Key(key, _scancode, action, mods) => {
-                self.key_event(key, action, mods);
-            }
-            glfw::WindowEvent::MouseButton(button, action, mods) => {
-                self.mouse_button_event(button, action, mods);
-            }
-            glfw::WindowEvent::CursorPos(x, y) => {
-                self.mouse_move_event(x, y);
-            }
-            glfw::WindowEvent::Scroll(x, y) => {
-                self.mouse_scroll_event(x, y);
-            }
-            glfw::WindowEvent::Close => {
-                self.close_event(window);
-            }
-            glfw::WindowEvent::FramebufferSize(width, height) => {
-                self.resize_event(width, height);
-            }
-            glfw::WindowEvent::Focus(focused) => {
-                self.focus_event(focused);
-            }
-            glfw::WindowEvent::Iconify(iconified) => {
-                self.iconify_event(iconified);
-            }
-            glfw::WindowEvent::FileDrop(paths) => {
-                self.file_drop_event(paths);
-            }
-            _ => {}
+        }
+        if self.should_close {
+            self.close_event(window);
         }
     }
 
     fn key_event(&mut self, key: glfw::Key, action: glfw::Action, mods: glfw::Modifiers) {
+        if key == glfw::Key::Escape && action == glfw::Action::Press {
+            self.should_close = true;
+        }
         self.input.modifiers = mods; // Met à jour le masque de modificatrices
 
         match action {
@@ -136,19 +157,33 @@ impl AppEvent {
         self.input.mouse_scrolled = Some((x, y));
     }
 
-    fn close_event(&mut self, mut window: PWindow) {
+    fn close_event(&mut self, window: &mut PWindow) {
         window.set_should_close(true);
     }
 
-    fn framebuffer_size_event(&mut self, _width: i32, _height: i32) {
-
+    fn framebuffer_size_event(&mut self, width: i32, height: i32) {
+        self.frame_buffer_size = (width, height);
     }
 
-    fn focus_event(&mut self, _focused: bool) {}
-    fn iconify_event(&mut self, _iconified: bool) {}
-    fn file_drop_event(&mut self, _paths: Vec<PathBuf>) {}
-    fn cursor_enter_event(&mut self, _entered: bool) {}
+    fn focus_event(&mut self, focused: bool) {
+        self.focus = focused;
+    }
 
+    fn iconify_event(&mut self, iconified: bool) {
+        self.iconified = iconified;
+    }
+
+    fn maximize_event(&mut self, maximized: bool) {
+        self.maximized = maximized;
+    }
+
+    fn file_drop_event(&mut self, paths: Vec<PathBuf>) {
+        self.file_dropped = Some(paths);
+    }
+
+    fn cursor_enter_event(&mut self, entered: bool) {
+        self.cursor_entered = entered;
+    }
 
     pub fn clear_input_events(&mut self) {
         self.input.key_pressed.clear();
@@ -157,6 +192,5 @@ impl AppEvent {
         self.input.mouse_scrolled = None;
         self.input.mouse_button_pressed.clear();
         self.input.mouse_button_released.clear();
-        // Remarque : on conserve self.input.modifiers car l'utilisateur peut maintenir Shift/Ctrl enfoncé sur plusieurs frames.
     }
 }
