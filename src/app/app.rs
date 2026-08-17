@@ -1,9 +1,8 @@
-use std::{time::{Duration, Instant}};
+use std::time::{Duration, Instant};
 
-use glfw::{Context, WindowHint::ContextVersion, ffi::glfwTerminate};
+use glfw::{ffi::glfwTerminate, Context, WindowHint::ContextVersion};
 
 use crate::app::app_event;
-
 
 pub struct Application {
     glfw: glfw::Glfw,
@@ -33,7 +32,9 @@ impl Application {
 
         // Set des param de fenetre
         glfw.window_hint(ContextVersion(3, 3)); //version opengl
-        glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
+        glfw.window_hint(glfw::WindowHint::OpenGlProfile(
+            glfw::OpenGlProfileHint::Core,
+        ));
         glfw.window_hint(glfw::WindowHint::DepthBits(Some(24))); // le depth buffer sert a stocker la profondeur de chaque pixel on appelle ca le z-buffer et il est de 24 bits, (plus il est grand plus on peut stocker de profondeur et moins on a de probleme de z-fighting(texture qui clip entre elle)) // mais attention car un buffer trop grand peut aussi causer des problemes de performance
         glfw.window_hint(glfw::WindowHint::Samples(Some(4)));
         // to use GPU rendering instead ofCPU integrated rendering (if available)
@@ -70,7 +71,8 @@ impl Application {
         // app.glfw.set_swap_interval(glfw::SwapInterval::None);
 
         // app.window.set_cursor_mode(glfw::CursorMode::Disabled); // rendre invisible le curseur de mq souris
-        app.window.set_cursor_pos(f64::from(width) / 2.0, f64::from(height) / 2.0);
+        app.window
+            .set_cursor_pos(f64::from(width) / 2.0, f64::from(height) / 2.0);
         app.window.request_attention();
 
         app.my_init_gl();
@@ -118,7 +120,8 @@ impl Application {
     }
 
     pub fn handle_events(&mut self) {
-        self.event_handler.handle_event(&mut self.glfw, &mut self.window, &self.events);
+        self.event_handler
+            .handle_event(&mut self.glfw, &mut self.window, &self.events);
     }
 }
 

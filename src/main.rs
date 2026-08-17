@@ -1,10 +1,9 @@
-use gl::{COLOR_BUFFER_BIT, Clear, ClearColor};
-use glfw::{Context, ffi::glfwSwapBuffers};
+use gl::{Clear, ClearColor, COLOR_BUFFER_BIT};
+use glfw::{ffi::glfwSwapBuffers, Context};
 
 use crate::app::app::Application;
 
 pub mod app;
-
 
 fn main() {
     let mut app = Application::new("Scop", 800.0, 800.0);
