@@ -6,3 +6,4 @@ scop
 .vscode/*
 /target
 .continue/*
+Cargo.lock
