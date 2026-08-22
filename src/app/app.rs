@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use glfw::{ffi::glfwTerminate, Context, WindowHint::ContextVersion};
+use glfw::{Context, WindowHint::ContextVersion};
 
 use crate::app::app_event;
 
@@ -20,12 +20,6 @@ pub struct Application {
 }
 
 impl Application {
-    pub fn terminate(&mut self) {
-        unsafe {
-            glfwTerminate();
-        }
-    }
-
     pub fn new(name: &str, width: f32, height: f32) -> Application {
         // initialisation de GLFW
         let mut glfw = glfw::init(error_callback).expect("Failed to initialize GLFW");
