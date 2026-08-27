@@ -61,6 +61,8 @@ impl VBO {
                 usage.to_gl(),
             );
         }
+
+        Self::unbind();
     }
 
     pub fn id(&self) -> GLuint {

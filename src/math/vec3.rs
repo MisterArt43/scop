@@ -1,5 +1,15 @@
-use std::ops::{Add, AddAssign, DivAssign, MulAssign, SubAssign};
+use std::ops::{
+    Add,
+    AddAssign,
+    Div,
+    DivAssign,
+    Mul,
+    MulAssign,
+    Sub,
+    SubAssign,
+};
 
+#[repr(C)]
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Vec3 {
     pub x: f32,
@@ -8,115 +18,123 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-    pub fn new(x: f32, y: f32, z: f32) -> Self {
-        Vec3 { x, y, z }
+    /*================== CONSTANTS ==================*/
+
+    pub const ZERO: Self = Self {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+    };
+
+    pub const ONE: Self = Self {
+        x: 1.0,
+        y: 1.0,
+        z: 1.0,
+    };
+
+    pub const FORWARD: Self = Self {
+        x: 0.0,
+        y: 0.0,
+        z: -1.0,
+    };
+
+    pub const BACKWARD: Self = Self {
+        x: 0.0,
+        y: 0.0,
+        z: 1.0,
+    };
+
+    pub const RIGHT: Self = Self {
+        x: 1.0,
+        y: 0.0,
+        z: 0.0,
+    };
+
+    pub const LEFT: Self = Self {
+        x: -1.0,
+        y: 0.0,
+        z: 0.0,
+    };
+
+    pub const UP: Self = Self {
+        x: 0.0,
+        y: 1.0,
+        z: 0.0,
+    };
+
+    pub const DOWN: Self = Self {
+        x: 0.0,
+        y: -1.0,
+        z: 0.0,
+    };
+
+    /*================== CONSTRUCTORS ==================*/
+
+    pub const fn new(x: f32, y: f32, z: f32) -> Self {
+        Self { x, y, z }
     }
 
-    pub fn add(self, other: &Vec3) -> Vec3 {
-        Vec3 {
-            x: self.x + other.x,
-            y: self.y + other.y,
-            z: self.z + other.z,
-        }
-    }
+    /*================== VECTOR OPERATIONS ==================*/
 
-    pub fn sub(self, other: &Vec3) -> Vec3 {
-        Vec3 {
-            x: self.x - other.x,
-            y: self.y - other.y,
-            z: self.z - other.z,
-        }
-    }
-
-    pub fn mul(self, scalar: f32) -> Vec3 {
-        Vec3 {
-            x: self.x * scalar,
-            y: self.y * scalar,
-            z: self.z * scalar,
-        }
-    }
-    pub fn mul_vec(self, other: &Vec3) -> Vec3 {
-        Vec3 {
-            x: self.x * other.x,
-            y: self.y * other.y,
-            z: self.z * other.z,
-        }
-    }
-
-    pub fn div(self, scalar: f32) -> Vec3 {
-        Vec3 {
-            x: self.x / scalar,
-            y: self.y / scalar,
-            z: self.z / scalar,
-        }
+    pub fn length_squared(self) -> f32 {
+        self.x * self.x
+            + self.y * self.y
+            + self.z * self.z
     }
 
     pub fn length(self) -> f32 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+        self.length_squared().sqrt()
     }
 
-    pub fn normalize(self) -> Vec3 {
-        let len = self.length();
-        if len > 0.0 {
-            self.div(len)
+    pub fn normalize(self) -> Self {
+        let length = self.length();
+
+        if length > 0.0 {
+            self / length
         } else {
-            Vec3::new(0.0, 0.0, 0.0)
+            Self::ZERO
         }
     }
 
-    /**
-     * Calcul du produit vectoriel entre deux vecteurs 3D https://www.youtube.com/watch?v=CWiClwqwnvg
-     */
-    pub fn cross(self, other: &Vec3) -> Vec3 {
-        Vec3 {
+    pub fn dot(self, other: Self) -> f32 {
+        self.x * other.x
+            + self.y * other.y
+            + self.z * other.z
+    }
+
+    pub fn cross(self, other: Self) -> Self {
+        Self {
             x: self.y * other.z - self.z * other.y,
             y: self.z * other.x - self.x * other.z,
             z: self.x * other.y - self.y * other.x,
         }
     }
 
-    pub fn dot(self, other: &Vec3) -> f32 {
-        self.x * other.x + self.y * other.y + self.z * other.z
-    }
-
-    pub fn mul_scalar(self, scalar: f32) -> Vec3 {
-        Vec3 {
-            x: self.x * scalar,
-            y: self.y * scalar,
-            z: self.z * scalar,
+    pub fn mul_vec(self, other: Self) -> Self {
+        Self {
+            x: self.x * other.x,
+            y: self.y * other.y,
+            z: self.z * other.z,
         }
     }
 
-    pub fn forward(self) -> Vec3 {
-        Vec3 {
-            x: self.y.cos() * self.x.cos(),
-            y: self.x.sin(),
-            z: self.y.sin() * self.x.cos(),
-        }
-    }
+    /*================== CONVERSION ==================*/
 
-    pub fn right(self) -> Vec3 {
-        Vec3 {
-            x: self.y.cos() * (self.x + std::f32::consts::FRAC_PI_2).cos(),
-            y: (self.x + std::f32::consts::FRAC_PI_2).sin(),
-            z: self.y.sin() * (self.x + std::f32::consts::FRAC_PI_2).cos(),
-        }
-    }
-
-    pub fn up(self) -> Vec3 {
-        self.forward().cross(self.right())
-    }
-
-    pub fn to_array(self) -> [f32; 3] {
+    pub const fn to_array(self) -> [f32; 3] {
         [self.x, self.y, self.z]
     }
 }
 
+
+/*==============================================================*/
+/*                             Add                              */
+/*==============================================================*/
+
 impl Add for Vec3 {
-    type Output = Vec3;
+    type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
-        Vec3 {
+        Self {
             x: self.x + other.x,
             y: self.y + other.y,
             z: self.z + other.z,
@@ -132,6 +150,23 @@ impl AddAssign for Vec3 {
     }
 }
 
+
+/*==============================================================*/
+/*                             Sub                              */
+/*==============================================================*/
+
+impl Sub for Vec3 {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Self {
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z,
+        }
+    }
+}
+
 impl SubAssign for Vec3 {
     fn sub_assign(&mut self, other: Self) {
         self.x -= other.x;
@@ -140,11 +175,20 @@ impl SubAssign for Vec3 {
     }
 }
 
-impl DivAssign<f32> for Vec3 {
-    fn div_assign(&mut self, scalar: f32) {
-        self.x /= scalar;
-        self.y /= scalar;
-        self.z /= scalar;
+
+/*==============================================================*/
+/*                             Mul                              */
+/*==============================================================*/
+
+impl Mul<f32> for Vec3 {
+    type Output = Self;
+
+    fn mul(self, scalar: f32) -> Self::Output {
+        Self {
+            x: self.x * scalar,
+            y: self.y * scalar,
+            z: self.z * scalar,
+        }
     }
 }
 
@@ -156,18 +200,48 @@ impl MulAssign<f32> for Vec3 {
     }
 }
 
-pub const FORWARD: Vec3 = Vec3 {
-    x: 0.0,
-    y: 0.0,
-    z: -1.0,
-};
-pub const RIGHT: Vec3 = Vec3 {
-    x: 1.0,
-    y: 0.0,
-    z: 0.0,
-};
-pub const UP: Vec3 = Vec3 {
-    x: 0.0,
-    y: 1.0,
-    z: 0.0,
-};
+
+/*==============================================================*/
+/*                             Div                              */
+/*==============================================================*/
+
+impl Div<f32> for Vec3 {
+    type Output = Self;
+
+    fn div(self, scalar: f32) -> Self::Output {
+        Self {
+            x: self.x / scalar,
+            y: self.y / scalar,
+            z: self.z / scalar,
+        }
+    }
+}
+
+impl DivAssign<f32> for Vec3 {
+    fn div_assign(&mut self, scalar: f32) {
+        self.x /= scalar;
+        self.y /= scalar;
+        self.z /= scalar;
+    }
+}
+
+
+/*==============================================================*/
+/*                         Conversions                          */
+/*==============================================================*/
+
+impl From<Vec3> for [f32; 3] {
+    fn from(value: Vec3) -> Self {
+        [value.x, value.y, value.z]
+    }
+}
+
+impl From<[f32; 3]> for Vec3 {
+    fn from(value: [f32; 3]) -> Self {
+        Self {
+            x: value[0],
+            y: value[1],
+            z: value[2],
+        }
+    }
+}

@@ -72,16 +72,16 @@ impl Mat4 {
 
     // https://www.songho.ca/opengl/gl_camera.html
     pub fn look_at(eye: Vec3, target: Vec3, up: Vec3) -> Mat4 {
-        let f = target.sub(&eye).normalize();
-        let s = f.cross(&up).normalize();
-        let u = s.cross(&f);
+        let f = (target - eye).normalize();
+        let s = f.cross(up).normalize();
+        let u = s.cross(f);
 
         Mat4 {
             data: [
                 [s.x, u.x, -f.x, 0.0],
                 [s.y, u.y, -f.y, 0.0],
                 [s.z, u.z, -f.z, 0.0],
-                [-s.dot(&eye), -u.dot(&eye), f.dot(&eye), 1.0],
+                [-s.dot(eye), -u.dot(eye), f.dot(eye), 1.0],
             ],
         }
     }

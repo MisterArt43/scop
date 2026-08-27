@@ -113,7 +113,7 @@ impl Application {
         self.window.swap_buffers();
     }
 
-    pub fn handle_events(&mut self) {
+    pub fn process_events(&mut self) {
         self.event_handler
             .handle_event(&mut self.glfw, &mut self.window, &self.events);
     }

@@ -1,6 +1,5 @@
 use crate::math::mat4::Mat4;
-use crate::math::vec3::{FORWARD, RIGHT, UP, Vec3};
-
+use crate::math::vec3::{Vec3};
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Quaternion {
     pub x: f32,
@@ -145,10 +144,11 @@ impl Quaternion {
     }
 
     pub fn rotate_vector(&self, v: Vec3) -> Vec3 {
-        let q_vec = Vec3::new(self.x, self.y, self.z);
-        // standard formula: v' = v + 2 * (q_vec x (q_vec x v) + w * (q_vec x v))
-        let t = q_vec.cross(&v).mul_scalar(2.0);
-        v.add(&t.mul_scalar(self.w)).add(&q_vec.cross(&t))
+        let q = self.normalize();
+
+        let q_vec = Vec3::new(q.x, q.y, q.z);
+        let t = q_vec.cross(v) * 2.0;
+        v + t * q.w + q_vec.cross(t)
     }
 
     pub fn slerp(&self, other: &Quaternion, t: f32) -> Quaternion {
@@ -182,12 +182,12 @@ impl Quaternion {
 
     pub fn rotate_pitch(&mut self, angle: f32) {
         // FPS-style pitch: rotate around camera's local right axis and clamp pitch
-        let axis = self.rotate_vector(RIGHT);
+        let axis = self.rotate_vector(Vec3::RIGHT);
         let q = Quaternion::from_axis_angle(axis, angle);
         let new_q = q.mul(self).normalize();
 
         // Prevent flipping: compute pitch from forward vector's y component
-        let fwd_y = new_q.rotate_vector(FORWARD).y.clamp(-1.0, 1.0);
+        let fwd_y = new_q.rotate_vector(Vec3::FORWARD).y.clamp(-1.0, 1.0);
         let pitch_angle = fwd_y.asin();
         let limit = std::f32::consts::FRAC_PI_2 - 0.01; // ~89.4 degrees
         if pitch_angle.abs() < limit {
@@ -196,19 +196,19 @@ impl Quaternion {
     }
 
     pub fn get_pitch(&self) -> f32 {
-        let fwd_y = self.rotate_vector(FORWARD).y.clamp(-1.0, 1.0);
+        let fwd_y = self.rotate_vector(Vec3::FORWARD).y.clamp(-1.0, 1.0);
         fwd_y.asin()
     }
 
     pub fn rotate_yaw(&mut self, angle: f32) {
         // Yaw around global up (world Y)
         // Use negative angle so positive input rotates camera to the right (FPS convention)
-        let q = Quaternion::from_axis_angle(UP, -angle);
+        let q = Quaternion::from_axis_angle(Vec3::UP, -angle);
         *self = q.mul(self).normalize();
     }
 
     pub fn get_yaw(&self) -> f32 {
-        let fwd = self.rotate_vector(FORWARD);
+        let fwd = self.rotate_vector(Vec3::FORWARD);
         fwd.z.atan2(fwd.x)
     }
 
@@ -218,7 +218,7 @@ impl Quaternion {
     }
 
     pub fn get_roll(&self) -> f32 {
-        let right = self.rotate_vector(RIGHT);
+        let right = self.rotate_vector(Vec3::RIGHT);
         right.y.atan2(right.x)
     }
 
@@ -228,14 +228,14 @@ impl Quaternion {
     }
 
     pub fn forward(&self) -> Vec3 {
-        self.rotate_vector(FORWARD)
+        self.rotate_vector(Vec3::FORWARD)
     }
 
     pub fn right(&self) -> Vec3 {
-        self.rotate_vector(RIGHT)
+        self.rotate_vector(Vec3::RIGHT)
     }
 
     pub fn up(&self) -> Vec3 {
-        self.rotate_vector(UP)
+        self.rotate_vector(Vec3::UP)
     }
 }

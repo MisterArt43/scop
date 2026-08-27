@@ -41,7 +41,7 @@ impl Transform {
     }
 
     pub fn translate(&mut self, translation: Vec3) {
-        self.position = self.position.add(&translation);
+        self.position = self.position + translation;
     }
 
     pub fn rotate(&mut self, rotation: Quaternion) {
@@ -49,7 +49,7 @@ impl Transform {
     }
 
     pub fn scale(&mut self, scale: Vec3) {
-        self.scale = self.scale.mul_vec(&scale);
+        self.scale = self.scale.mul_vec(scale);
     }
 
     pub fn reset(&mut self) {
@@ -59,13 +59,18 @@ impl Transform {
     }
 
     pub fn lerp(self, other: &Transform, t: f32) -> Transform {
-        Transform {
-            position: self.position.mul(1.0 - t).add(&other.position.mul(t)),
-            rotation: self
-                .rotation
-                .mul_f32(1.0 - t)
-                .add(&other.rotation.mul_f32(t)),
-            scale: self.scale.mul(1.0 - t).add(&other.scale.mul(t)),
-        }
+    let t = t.clamp(0.0, 1.0);
+
+    Transform {
+        position: self.position * (1.0 - t) + other.position * t,
+
+        rotation: (
+            self.rotation.mul_f32(1.0 - t)
+                .add(&other.rotation.mul_f32(t))
+        )
+        .normalize(),
+
+        scale: self.scale * (1.0 - t) + other.scale * t,
     }
+}
 }
