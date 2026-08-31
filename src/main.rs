@@ -22,7 +22,7 @@ pub mod image;
 pub mod math;
 
 #[repr(C)]
-struct VertexTuto {
+struct  VertexTuto {
     position: Vec3,
     color: Vec3,
     uv: Vec2,
@@ -38,46 +38,22 @@ fn main() {
     let vertices = [
         VertexTuto {
             position: Vec3::new(0.5, 0.5, 0.0),
-            color: Vec3 {
-                x: 1.0,
-                y: 0.0,
-                z: 0.0,
-            },
+            color: Vec3 { x: 1.0, y: 0.0, z: 0.0, },
             uv: Vec2 { x: 1.0, y: 1.0 },
         },
         VertexTuto {
             position: Vec3::new(0.5, -0.5, 0.0),
-            color: Vec3 {
-                x: 0.0,
-                y: 1.0,
-                z: 0.0,
-            },
+            color: Vec3 { x: 0.0, y: 1.0, z: 0.0, },
             uv: Vec2 { x: 1.0, y: 0.0 },
         },
         VertexTuto {
-            position: Vec3 {
-                x: -0.5,
-                y: -0.5,
-                z: 0.0,
-            },
-            color: Vec3 {
-                x: 0.0,
-                y: 0.0,
-                z: 1.0,
-            },
+            position: Vec3 { x: -0.5, y: -0.5, z: 0.0, },
+            color: Vec3 { x: 0.0, y: 0.0, z: 1.0, },
             uv: Vec2 { x: 0.0, y: 0.0 },
         },
         VertexTuto {
-            position: Vec3 {
-                x: -0.5,
-                y: 0.5,
-                z: 0.0,
-            },
-            color: Vec3 {
-                x: 1.0,
-                y: 1.0,
-                z: 0.0,
-            },
+            position: Vec3 { x: -0.5, y: 0.5, z: 0.0, },
+            color: Vec3 { x: 1.0, y: 1.0, z: 0.0, },
             uv: Vec2 { x: 0.0, y: 1.0 },
         },
     ];
@@ -138,7 +114,7 @@ fn main() {
      *    Texture
      *========================**/
 
-    let mut img1 = PPM::load("C:\\Users\\arthu\\Documents\\GitHub\\scop\\ressources\\fd.ppm")
+    let mut img1 = PPM::load("/home/abucia/Documents/GitHub/scop/ressources/fd.ppm")
         .expect("Error couldn't load image");
     img1.flipv();
 
@@ -155,11 +131,11 @@ fn main() {
             img1.width(),
             img1.height(),
             img1.pixels(),
-            texture::TextureFormat::RGB8,
+            img1.get_texture_format()
         )
         .generate_mipmaps();
 
-    let mut img2 = BMP::load("C:\\Users\\arthu\\Pictures\\mikutransparent.bmp")
+    let mut img2 = BMP::load("/home/abucia/Documents/GitHub/scop/ressources/poney.bmp")
         .expect("Error couldn't load image");
     img2.flipv();
 
@@ -176,7 +152,7 @@ fn main() {
             img2.width(),
             img2.height(),
             img2.pixels(),
-            texture::TextureFormat::RGBA8,
+            img2.get_texture_format()
         )
         .generate_mipmaps();
 

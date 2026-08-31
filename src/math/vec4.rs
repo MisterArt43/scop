@@ -1,13 +1,4 @@
-use std::ops::{
-    Add,
-    AddAssign,
-    Div,
-    DivAssign,
-    Mul,
-    MulAssign,
-    Sub,
-    SubAssign,
-};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -44,10 +35,7 @@ impl Vec4 {
     /*================== VECTOR OPERATIONS ==================*/
 
     pub fn length_squared(self) -> f32 {
-        self.x * self.x
-            + self.y * self.y
-            + self.z * self.z
-            + self.w * self.w
+        self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w
     }
 
     pub fn length(self) -> f32 {
@@ -65,10 +53,7 @@ impl Vec4 {
     }
 
     pub fn dot(self, other: Self) -> f32 {
-        self.x * other.x
-            + self.y * other.y
-            + self.z * other.z
-            + self.w * other.w
+        self.x * other.x + self.y * other.y + self.z * other.z + self.w * other.w
     }
 
     pub fn mul_vec(self, other: Self) -> Self {
@@ -86,7 +71,6 @@ impl Vec4 {
         [self.x, self.y, self.z, self.w]
     }
 }
-
 
 /*==============================================================*/
 /*                             Add                              */
@@ -114,7 +98,6 @@ impl AddAssign for Vec4 {
     }
 }
 
-
 /*==============================================================*/
 /*                             Sub                              */
 /*==============================================================*/
@@ -140,7 +123,6 @@ impl SubAssign for Vec4 {
         self.w -= other.w;
     }
 }
-
 
 /*==============================================================*/
 /*                             Mul                              */
@@ -168,7 +150,6 @@ impl MulAssign<f32> for Vec4 {
     }
 }
 
-
 /*==============================================================*/
 /*                             Div                              */
 /*==============================================================*/
@@ -194,7 +175,6 @@ impl DivAssign<f32> for Vec4 {
         self.w /= scalar;
     }
 }
-
 
 /*==============================================================*/
 /*                         Conversions                          */

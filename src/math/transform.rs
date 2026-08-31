@@ -59,18 +59,18 @@ impl Transform {
     }
 
     pub fn lerp(self, other: &Transform, t: f32) -> Transform {
-    let t = t.clamp(0.0, 1.0);
+        let t = t.clamp(0.0, 1.0);
 
-    Transform {
-        position: self.position * (1.0 - t) + other.position * t,
+        Transform {
+            position: self.position * (1.0 - t) + other.position * t,
 
-        rotation: (
-            self.rotation.mul_f32(1.0 - t)
-                .add(&other.rotation.mul_f32(t))
-        )
-        .normalize(),
+            rotation: (self
+                .rotation
+                .mul_f32(1.0 - t)
+                .add(&other.rotation.mul_f32(t)))
+            .normalize(),
 
-        scale: self.scale * (1.0 - t) + other.scale * t,
+            scale: self.scale * (1.0 - t) + other.scale * t,
+        }
     }
-}
 }

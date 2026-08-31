@@ -1,8 +1,12 @@
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use std::{cell::RefCell, collections::HashMap, ffi::CString, fs::read, ptr::null_mut};
 
 use gl::{
-    AttachShader, COMPILE_STATUS, CompileShader, CreateProgram, CreateShader, DeleteShader, FALSE, FRAGMENT_SHADER, GetProgramInfoLog, GetProgramiv, GetShaderInfoLog, GetShaderiv, GetUniformLocation, INFO_LOG_LENGTH, LINK_STATUS, LinkProgram, ShaderSource, Uniform1f, Uniform1i, Uniform2fv, Uniform3fv, Uniform4fv, UniformMatrix4fv, UseProgram, VERTEX_SHADER, types::{self, GLint, GLuint},
+    types::{self, GLint, GLuint},
+    AttachShader, CompileShader, CreateProgram, CreateShader, DeleteShader, GetProgramInfoLog,
+    GetProgramiv, GetShaderInfoLog, GetShaderiv, GetUniformLocation, LinkProgram, ShaderSource,
+    Uniform1f, Uniform1i, Uniform2fv, Uniform3fv, Uniform4fv, UniformMatrix4fv, UseProgram,
+    COMPILE_STATUS, FALSE, FRAGMENT_SHADER, INFO_LOG_LENGTH, LINK_STATUS, VERTEX_SHADER,
 };
 
 #[derive(Default)]
@@ -22,7 +26,12 @@ impl Shader {
             GetShaderiv(shader, COMPILE_STATUS, &mut success);
             if success == FALSE as i32 {
                 let mut info_log: Vec<u8> = vec![0; log_lenght as usize];
-                GetShaderInfoLog(shader, log_lenght, null_mut(), info_log.as_mut_ptr() as *mut i8);
+                GetShaderInfoLog(
+                    shader,
+                    log_lenght,
+                    null_mut(),
+                    info_log.as_mut_ptr() as *mut i8,
+                );
                 return Err(anyhow!(
                     "SHADER_COMPILATION_ERROR:\n {}",
                     String::from_utf8(info_log.to_vec())?
@@ -40,7 +49,12 @@ impl Shader {
             if success == FALSE as i32 {
                 GetProgramiv(program, INFO_LOG_LENGTH, &mut log_lenght);
                 let mut info_log: Vec<u8> = vec![0; log_lenght as usize];
-                GetProgramInfoLog(program, log_lenght, null_mut(), info_log.as_mut_ptr() as *mut i8);
+                GetProgramInfoLog(
+                    program,
+                    log_lenght,
+                    null_mut(),
+                    info_log.as_mut_ptr() as *mut i8,
+                );
                 return Err(anyhow!(
                     "SHADER_LINKING_ERROR:\n {}",
                     String::from_utf8(info_log.to_vec())?
@@ -55,15 +69,11 @@ impl Shader {
             return location;
         }
 
-        let c_name = CString::new(name)
-            .expect("Failed to convert uniform name to CString");
+        let c_name = CString::new(name).expect("Failed to convert uniform name to CString");
 
-        let location =
-            unsafe { GetUniformLocation(self.id, c_name.as_ptr()) };
+        let location = unsafe { GetUniformLocation(self.id, c_name.as_ptr()) };
 
-        self.uniforms
-            .borrow_mut()
-            .insert(name.to_owned(), location);
+        self.uniforms.borrow_mut().insert(name.to_owned(), location);
 
         location
     }

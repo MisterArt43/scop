@@ -1,13 +1,4 @@
-use std::ops::{
-    Add,
-    AddAssign,
-    Div,
-    DivAssign,
-    Mul,
-    MulAssign,
-    Sub,
-    SubAssign,
-};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -77,9 +68,7 @@ impl Vec3 {
     /*================== VECTOR OPERATIONS ==================*/
 
     pub fn length_squared(self) -> f32 {
-        self.x * self.x
-            + self.y * self.y
-            + self.z * self.z
+        self.x * self.x + self.y * self.y + self.z * self.z
     }
 
     pub fn length(self) -> f32 {
@@ -97,9 +86,7 @@ impl Vec3 {
     }
 
     pub fn dot(self, other: Self) -> f32 {
-        self.x * other.x
-            + self.y * other.y
-            + self.z * other.z
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 
     pub fn cross(self, other: Self) -> Self {
@@ -125,7 +112,6 @@ impl Vec3 {
     }
 }
 
-
 /*==============================================================*/
 /*                             Add                              */
 /*==============================================================*/
@@ -149,7 +135,6 @@ impl AddAssign for Vec3 {
         self.z += other.z;
     }
 }
-
 
 /*==============================================================*/
 /*                             Sub                              */
@@ -175,7 +160,6 @@ impl SubAssign for Vec3 {
     }
 }
 
-
 /*==============================================================*/
 /*                             Mul                              */
 /*==============================================================*/
@@ -200,7 +184,6 @@ impl MulAssign<f32> for Vec3 {
     }
 }
 
-
 /*==============================================================*/
 /*                             Div                              */
 /*==============================================================*/
@@ -224,7 +207,6 @@ impl DivAssign<f32> for Vec3 {
         self.z /= scalar;
     }
 }
-
 
 /*==============================================================*/
 /*                         Conversions                          */

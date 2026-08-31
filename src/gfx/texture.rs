@@ -1,14 +1,15 @@
 use std::ffi::c_void;
 
 use gl::{
+    types::{GLenum, GLint, GLuint},
     ActiveTexture, BindTexture, DeleteTextures, GenTextures, GenerateMipmap, TexImage2D,
     TexParameteri,
-    types::{GLenum, GLint, GLuint},
 };
 
 #[derive(Debug, Clone, Copy)]
 pub enum TextureFormat {
     R8,
+    RG8,
     RGB8,
     RGBA8,
 }
@@ -17,6 +18,7 @@ impl TextureFormat {
     fn internal_format(self) -> GLint {
         match self {
             Self::R8 => gl::R8 as GLint,
+            Self::RG8 => gl::RG8 as GLint,
             Self::RGB8 => gl::RGB8 as GLint,
             Self::RGBA8 => gl::RGBA8 as GLint,
         }
@@ -25,6 +27,7 @@ impl TextureFormat {
     fn format(self) -> GLenum {
         match self {
             Self::R8 => gl::RED,
+            Self::RG8 => gl::RG,
             Self::RGB8 => gl::RGB,
             Self::RGBA8 => gl::RGBA,
         }
@@ -47,21 +50,13 @@ impl TextureFilter {
             Self::Nearest => gl::NEAREST as GLint,
             Self::Linear => gl::LINEAR as GLint,
 
-            Self::NearestMipmapNearest => {
-                gl::NEAREST_MIPMAP_NEAREST as GLint
-            }
+            Self::NearestMipmapNearest => gl::NEAREST_MIPMAP_NEAREST as GLint,
 
-            Self::LinearMipmapNearest => {
-                gl::LINEAR_MIPMAP_NEAREST as GLint
-            }
+            Self::LinearMipmapNearest => gl::LINEAR_MIPMAP_NEAREST as GLint,
 
-            Self::NearestMipmapLinear => {
-                gl::NEAREST_MIPMAP_LINEAR as GLint
-            }
+            Self::NearestMipmapLinear => gl::NEAREST_MIPMAP_LINEAR as GLint,
 
-            Self::LinearMipmapLinear => {
-                gl::LINEAR_MIPMAP_LINEAR as GLint
-            }
+            Self::LinearMipmapLinear => gl::LINEAR_MIPMAP_LINEAR as GLint,
         }
     }
 }
@@ -142,7 +137,7 @@ impl Texture {
 
         unsafe {
             gl::PixelStorei(gl::UNPACK_ALIGNMENT, 1);
-            
+
             TexImage2D(
                 self.target,
                 0,
@@ -163,25 +158,13 @@ impl Texture {
 
     /*================== FILTER ==================*/
 
-    pub fn set_filter(
-        &self,
-        min_filter: TextureFilter,
-        mag_filter: TextureFilter,
-    ) -> &Self {
+    pub fn set_filter(&self, min_filter: TextureFilter, mag_filter: TextureFilter) -> &Self {
         self.bind(0);
 
         unsafe {
-            TexParameteri(
-                self.target,
-                gl::TEXTURE_MIN_FILTER,
-                min_filter.to_gl(),
-            );
+            TexParameteri(self.target, gl::TEXTURE_MIN_FILTER, min_filter.to_gl());
 
-            TexParameteri(
-                self.target,
-                gl::TEXTURE_MAG_FILTER,
-                mag_filter.to_gl(),
-            );
+            TexParameteri(self.target, gl::TEXTURE_MAG_FILTER, mag_filter.to_gl());
         }
 
         self.unbind();
@@ -191,25 +174,13 @@ impl Texture {
 
     /*================== WRAP ==================*/
 
-    pub fn set_wrap(
-        &self,
-        wrap_s: TextureWrap,
-        wrap_t: TextureWrap,
-    ) -> &Self{
+    pub fn set_wrap(&self, wrap_s: TextureWrap, wrap_t: TextureWrap) -> &Self {
         self.bind(0);
 
         unsafe {
-            TexParameteri(
-                self.target,
-                gl::TEXTURE_WRAP_S,
-                wrap_s.to_gl(),
-            );
+            TexParameteri(self.target, gl::TEXTURE_WRAP_S, wrap_s.to_gl());
 
-            TexParameteri(
-                self.target,
-                gl::TEXTURE_WRAP_T,
-                wrap_t.to_gl(),
-            );
+            TexParameteri(self.target, gl::TEXTURE_WRAP_T, wrap_t.to_gl());
         }
 
         self.unbind();

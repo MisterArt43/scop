@@ -1,13 +1,4 @@
-use std::ops::{
-    Add,
-    AddAssign,
-    Div,
-    DivAssign,
-    Mul,
-    MulAssign,
-    Sub,
-    SubAssign,
-};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -19,35 +10,17 @@ pub struct Vec2 {
 impl Vec2 {
     /*================== CONSTANTS ==================*/
 
-    pub const ZERO: Self = Self {
-        x: 0.0,
-        y: 0.0,
-    };
+    pub const ZERO: Self = Self { x: 0.0, y: 0.0 };
 
-    pub const ONE: Self = Self {
-        x: 1.0,
-        y: 1.0,
-    };
+    pub const ONE: Self = Self { x: 1.0, y: 1.0 };
 
-    pub const RIGHT: Self = Self {
-        x: 1.0,
-        y: 0.0,
-    };
+    pub const RIGHT: Self = Self { x: 1.0, y: 0.0 };
 
-    pub const LEFT: Self = Self {
-        x: -1.0,
-        y: 0.0,
-    };
+    pub const LEFT: Self = Self { x: -1.0, y: 0.0 };
 
-    pub const UP: Self = Self {
-        x: 0.0,
-        y: 1.0,
-    };
+    pub const UP: Self = Self { x: 0.0, y: 1.0 };
 
-    pub const DOWN: Self = Self {
-        x: 0.0,
-        y: -1.0,
-    };
+    pub const DOWN: Self = Self { x: 0.0, y: -1.0 };
 
     /*================== CONSTRUCTORS ==================*/
 
@@ -93,7 +66,6 @@ impl Vec2 {
     }
 }
 
-
 /*==============================================================*/
 /*                             Add                              */
 /*==============================================================*/
@@ -115,7 +87,6 @@ impl AddAssign for Vec2 {
         self.y += other.y;
     }
 }
-
 
 /*==============================================================*/
 /*                             Sub                              */
@@ -139,7 +110,6 @@ impl SubAssign for Vec2 {
     }
 }
 
-
 /*==============================================================*/
 /*                             Mul                              */
 /*==============================================================*/
@@ -162,7 +132,6 @@ impl MulAssign<f32> for Vec2 {
     }
 }
 
-
 /*==============================================================*/
 /*                             Div                              */
 /*==============================================================*/
@@ -184,7 +153,6 @@ impl DivAssign<f32> for Vec2 {
         self.y /= scalar;
     }
 }
-
 
 /*==============================================================*/
 /*                         Conversions                          */

@@ -39,12 +39,7 @@ impl PPM {
     }
 }
 
-fn parse_p3(
-    data: &[u8],
-    pos: &mut usize,
-    count: usize,
-    max_value: u32,
-) -> Result<Image> {
+fn parse_p3(data: &[u8], pos: &mut usize, count: usize, max_value: u32) -> Result<Image> {
     let mut pixels = Vec::with_capacity(count);
 
     for _ in 0..count {
@@ -65,12 +60,7 @@ fn parse_p3(
     })
 }
 
-fn parse_p6(
-    data: &[u8],
-    pos: &mut usize,
-    count: usize,
-    max_value: u32,
-) ->  Result<Image> {
+fn parse_p6(data: &[u8], pos: &mut usize, count: usize, max_value: u32) -> Result<Image> {
     // Skip the separator between the header and binary pixels.
     if *pos < data.len() && data[*pos] == b'\r' {
         *pos += 1;
@@ -131,10 +121,7 @@ fn next_token(data: &[u8], pos: &mut usize) -> Result<String> {
 
     let start = *pos;
 
-    while *pos < data.len()
-        && !data[*pos].is_ascii_whitespace()
-        && data[*pos] != b'#'
-    {
+    while *pos < data.len() && !data[*pos].is_ascii_whitespace() && data[*pos] != b'#' {
         *pos += 1;
     }
 

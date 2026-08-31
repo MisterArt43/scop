@@ -1,10 +1,10 @@
-use std::{
-    ffi::c_void,
-    mem::size_of,
-};
+use std::{ffi::c_void, mem::size_of};
 
 use gl::{
-    self, BindVertexArray, DeleteVertexArrays, EnableVertexAttribArray, VertexAttribIPointer, VertexAttribPointer, types::{GLenum, GLint, GLsizei, GLuint},
+    self,
+    types::{GLenum, GLint, GLsizei, GLuint},
+    BindVertexArray, DeleteVertexArrays, EnableVertexAttribArray, VertexAttribIPointer,
+    VertexAttribPointer,
 };
 
 use crate::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
@@ -123,7 +123,7 @@ impl VAO {
         for attribute in layout.attributes() {
             unsafe {
                 EnableVertexAttribArray(attribute.location);
-                
+
                 if attribute.integer {
                     VertexAttribIPointer(
                         attribute.location,

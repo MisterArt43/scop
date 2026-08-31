@@ -1,3 +1,5 @@
+use crate::gfx::texture;
+
 #[derive(Debug, Clone)]
 pub struct Image {
     pub width: u32,
@@ -49,5 +51,15 @@ impl Image {
 
     pub fn pixels(&self) -> &[u8] {
         &self.pixels
+    }
+
+    pub fn get_texture_format(&self) -> texture::TextureFormat {
+        match self.channels {
+            1 => texture::TextureFormat::R8,
+            2 => texture::TextureFormat::RG8,
+            3 => texture::TextureFormat::RGB8,
+            4 => texture::TextureFormat::RGBA8,
+            _ => panic!("Unsupported number of channels: {}", self.channels),
+        }
     }
 }

@@ -24,10 +24,7 @@ impl BMP {
             bail!("Invalid BMP size");
         }
 
-        if !matches!(
-            (bpp, compression),
-            (24, 0) | (32, 0) | (32, 3)
-        ) {
+        if !matches!((bpp, compression), (24, 0) | (32, 0) | (32, 3)) {
             bail!("Unsupported BMP format");
         }
 

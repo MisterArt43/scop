@@ -1,5 +1,5 @@
 use crate::math::mat4::Mat4;
-use crate::math::vec3::{Vec3};
+use crate::math::vec3::Vec3;
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct Quaternion {
     pub x: f32,
