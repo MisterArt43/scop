@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::gfx::texture;
 
 #[derive(Debug, Clone)]
@@ -6,6 +8,12 @@ pub struct Image {
     pub height: u32,
     pub channels: u8,
     pub pixels: Vec<u8>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ImageExtension {
+    BMP,
+    PPM,
 }
 
 impl Image {
@@ -37,18 +45,6 @@ impl Image {
         self.pixels
     }
 
-    pub fn width(&self) -> u32 {
-        self.width
-    }
-
-    pub fn height(&self) -> u32 {
-        self.height
-    }
-
-    pub fn channels(&self) -> u8 {
-        self.channels
-    }
-
     pub fn pixels(&self) -> &[u8] {
         &self.pixels
     }
@@ -61,5 +57,35 @@ impl Image {
             4 => texture::TextureFormat::RGBA8,
             _ => panic!("Unsupported number of channels: {}", self.channels),
         }
+    }
+
+    pub fn load_from_file(path: &Path) -> Option<Self> {
+    match path
+        .extension()?
+        .to_str()?
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "bmp" => crate::image::bmp::BMP::load(path).ok(),
+        "ppm" => crate::image::ppm::PPM::load(path).ok(),
+        _ => None,
+    }
+}
+
+    pub fn load_from_file_or_default(path: &Path, default_path: &Path) -> Self {
+        match Self::load_from_file(path) {
+            Some(image) => image,
+            None => {
+                eprintln!(
+                    "Failed to load image from '{}', loading default image from '{}'",
+                    path.display(), default_path.display()
+                );
+                Self::load_from_file(default_path).expect("Failed to load default image")
+            }
+        }
+    }
+
+    pub fn default_missing_texture_path() -> &'static str {
+        "assets/textures/missing_texture.bmp"
     }
 }

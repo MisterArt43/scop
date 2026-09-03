@@ -3,6 +3,7 @@ pub mod shader;
 pub mod vao;
 pub mod vbo;
 pub mod texture;
+pub mod material;
 
 pub use ebo::EBO;
 pub use shader::Shader;

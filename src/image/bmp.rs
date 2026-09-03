@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path::Path};
 
 use anyhow::{bail, Result};
 
@@ -7,7 +7,7 @@ use super::image::Image;
 pub struct BMP;
 
 impl BMP {
-    pub fn load(path: &str) -> Result<Image> {
+    pub fn load(path: &Path) -> Result<Image> {
         let data = fs::read(path)?;
 
         if data.len() < 54 || &data[..2] != b"BM" {

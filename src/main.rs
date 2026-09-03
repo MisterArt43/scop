@@ -1,8 +1,8 @@
 use std::mem::offset_of;
 
 use gl::{
-    ActiveTexture, BindTexture, COLOR_BUFFER_BIT, Clear, ClearColor, DEPTH_BUFFER_BIT,
-    DrawElements, TEXTURE_2D, TEXTURE0, TEXTURE1,
+    COLOR_BUFFER_BIT, Clear, ClearColor, DEPTH_BUFFER_BIT,
+    DrawElements
 };
 use glfw::{Context, ffi::glfwSwapBuffers};
 
@@ -20,6 +20,8 @@ pub mod app;
 pub mod gfx;
 pub mod image;
 pub mod math;
+pub mod mesh;
+pub mod asset;
 
 #[repr(C)]
 struct  VertexTuto {
@@ -31,9 +33,9 @@ struct  VertexTuto {
 fn main() {
     let mut app = Application::new("Scop", 800.0, 800.0);
 
-    /*================================================================================================
-     *                                         INIT MAIN LOOP
-     *================================================================================================**/
+    /*====================================================================================
+     *                                 INIT MAIN LOOP
+     *====================================================================================**/
 
     let vertices = [
         VertexTuto {
@@ -85,7 +87,6 @@ fn main() {
 
     let shader_program = Shader::new(&vertex_shader_source, &fragment_shader_source)
         .expect("Failed to create shader program");
-    shader_program.activate();
 
     /*======================
      *    VERTEX ARRAY OBJECT
@@ -114,8 +115,23 @@ fn main() {
      *    Texture
      *========================**/
 
-    let mut img1 = PPM::load("/home/abucia/Documents/GitHub/scop/ressources/fd.ppm")
-        .expect("Error couldn't load image");
+     // not in target directory, but in the root of the project
+    let project_root = std::env::current_exe()
+        .expect("Failed to get current executable path")
+        .parent()
+        .expect("Failed to get parent directory")
+        .parent().unwrap()
+        .parent().unwrap()
+        .to_path_buf();
+
+    let mut img1 = PPM::load(&project_root.join("ressources/fd.ppm").clone())
+        .unwrap_or_else(|error| {
+            panic!(
+                "Error couldn't load image {}: {}",
+                project_root.join("ressources\\fd.ppm").display(),
+                error
+            )
+        });
     img1.flipv();
 
     let mut texture = Texture::new_2d();
@@ -128,14 +144,22 @@ fn main() {
 
     texture
         .upload(
-            img1.width(),
-            img1.height(),
+            img1.width,
+            img1.height,
             img1.pixels(),
             img1.get_texture_format()
         )
         .generate_mipmaps();
 
-    let mut img2 = BMP::load("/home/abucia/Documents/GitHub/scop/ressources/poney.bmp")
+    let project_root = std::env::current_exe()
+        .expect("Failed to get current executable path")
+        .parent()
+        .expect("Failed to get parent directory")
+        .parent().unwrap()
+        .parent().unwrap()
+        .to_path_buf();
+
+    let mut img2 = BMP::load(&project_root.join("ressources/poney.bmp"))
         .expect("Error couldn't load image");
     img2.flipv();
 
@@ -149,8 +173,8 @@ fn main() {
 
     texture2
         .upload(
-            img2.width(),
-            img2.height(),
+            img2.width,
+            img2.height,
             img2.pixels(),
             img2.get_texture_format()
         )
@@ -186,12 +210,8 @@ fn main() {
 
         // ! *================== Draw =================*/
         shader_program.activate();
-        unsafe {
-            ActiveTexture(TEXTURE0);
-            BindTexture(TEXTURE_2D, texture.id());
-            ActiveTexture(TEXTURE1);
-            BindTexture(TEXTURE_2D, texture2.id());
-        }
+        texture.bind(0);
+        texture2.bind(1);
         vao.bind();
 
         unsafe {
