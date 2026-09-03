@@ -15,9 +15,9 @@ use crate::{
         vec3::Vec3,
     },
     mesh::Vertex,
-    ebo::EBO,
-    vao::VAO,
-    vbo::VBO,
+    gfx::ebo::EBO,
+    gfx::vao::VAO,
+    gfx::vbo::VBO,
 };
 
 #[derive(Debug)]

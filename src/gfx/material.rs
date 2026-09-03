@@ -1,6 +1,6 @@
 use crate::gfx::texture::Texture;
 use crate::math::vec3::Vec3;
-use crate::shader::Shader;
+use crate::gfx::shader::Shader;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
