@@ -63,7 +63,13 @@ impl Image {
         match path.extension()?.to_str()?.to_ascii_lowercase().as_str() {
             "bmp" => crate::image::bmp::BMP::load(path).ok(),
             "ppm" => crate::image::ppm::PPM::load(path).ok(),
-            _ => None,
+            _ => {
+                println!(
+                    "Unsupported image format for file '{}'. Supported formats are BMP and PPM.",
+                    path.display()
+                );
+                None
+            },
         }
     }
 

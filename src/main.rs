@@ -44,7 +44,7 @@ fn main() {
     let project_root = Path::new(env!("CARGO_MANIFEST_DIR"));
 
     let obj_path = project_root.join(
-        "ressources/42.obj"
+        "ressources/Center City Sci-Fi.obj"
     );
 
     let vertex_shader_path = project_root.join(
