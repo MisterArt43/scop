@@ -48,11 +48,11 @@ fn main() {
     );
 
     let vertex_shader_path = project_root.join(
-        "shader/tuto.vert"
+        "shader/unlit.vert"
     );
 
     let fragment_shader_path = project_root.join(
-        "shader/tuto.frag"
+        "shader/unlit.frag"
     );
 
 

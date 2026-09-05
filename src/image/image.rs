@@ -69,7 +69,7 @@ impl Image {
                     path.display()
                 );
                 None
-            },
+            }
         }
     }
 
