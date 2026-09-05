@@ -2,13 +2,13 @@ use std::time::{Duration, Instant};
 
 use glfw::{Context, WindowHint::ContextVersion};
 
-use crate::app::app_event;
+use crate::app::event;
 
 pub struct Application {
     glfw: glfw::Glfw,
     pub(crate) window: glfw::PWindow,
     events: glfw::GlfwReceiver<(f64, glfw::WindowEvent)>,
-    pub event_handler: app_event::AppEvent,
+    pub event_handler: event::AppEvent,
     pub width: i32,
     pub height: i32,
 
@@ -49,7 +49,7 @@ impl Application {
             glfw,
             window,
             events,
-            event_handler: app_event::AppEvent::new(),
+            event_handler: event::AppEvent::new(),
             width: 0,
             height: 0,
             delta_time: 0.0,

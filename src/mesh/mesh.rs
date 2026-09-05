@@ -1,23 +1,14 @@
-use std::{
-    mem::offset_of,
-    ptr::null,
-};
+use std::{mem::offset_of, ptr::null};
 
 use gl::{DrawElements, TRIANGLES, UNSIGNED_INT};
 
 use crate::{
-    gfx::{
-        BufferUsage,
-        VertexLayout,
-    },
-    math::{
-        vec2::Vec2,
-        vec3::Vec3,
-    },
-    mesh::Vertex,
     gfx::ebo::EBO,
     gfx::vao::VAO,
     gfx::vbo::VBO,
+    gfx::{BufferUsage, VertexLayout},
+    math::{vec2::Vec2, vec3::Vec3},
+    mesh::Vertex,
 };
 
 #[derive(Debug)]
@@ -85,12 +76,7 @@ impl Mesh {
         self.vao.bind();
 
         unsafe {
-            DrawElements(
-                TRIANGLES,
-                self.index_count as i32,
-                UNSIGNED_INT,
-                null(),
-            );
+            DrawElements(TRIANGLES, self.index_count as i32, UNSIGNED_INT, null());
         }
     }
 

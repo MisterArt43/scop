@@ -1,8 +1,4 @@
-use crate::{
-    asset::MtlMaterial,
-    math::transform::Transform,
-    mesh::Mesh,
-};
+use crate::{asset::MtlMaterial, math::transform::Transform, mesh::Mesh};
 
 #[derive(Debug)]
 pub struct SubMesh {

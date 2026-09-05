@@ -60,17 +60,12 @@ impl Image {
     }
 
     pub fn load_from_file(path: &Path) -> Option<Self> {
-    match path
-        .extension()?
-        .to_str()?
-        .to_ascii_lowercase()
-        .as_str()
-    {
-        "bmp" => crate::image::bmp::BMP::load(path).ok(),
-        "ppm" => crate::image::ppm::PPM::load(path).ok(),
-        _ => None,
+        match path.extension()?.to_str()?.to_ascii_lowercase().as_str() {
+            "bmp" => crate::image::bmp::BMP::load(path).ok(),
+            "ppm" => crate::image::ppm::PPM::load(path).ok(),
+            _ => None,
+        }
     }
-}
 
     pub fn load_from_file_or_default(path: &Path, default_path: &Path) -> Self {
         match Self::load_from_file(path) {
@@ -78,7 +73,8 @@ impl Image {
             None => {
                 eprintln!(
                     "Failed to load image from '{}', loading default image from '{}'",
-                    path.display(), default_path.display()
+                    path.display(),
+                    default_path.display()
                 );
                 Self::load_from_file(default_path).expect("Failed to load default image")
             }

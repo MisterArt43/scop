@@ -1,6 +1,6 @@
+use crate::gfx::shader::Shader;
 use crate::gfx::texture::Texture;
 use crate::math::vec3::Vec3;
-use crate::gfx::shader::Shader;
 use std::rc::Rc;
 
 #[derive(Debug, Clone)]
@@ -10,7 +10,7 @@ pub struct Material {
     ambient: Vec3,
     specular: Vec3,
     diffuse: Vec3,
-    
+
     shininess: f32,
     opacity: f32,
 

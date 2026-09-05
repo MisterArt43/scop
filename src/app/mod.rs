@@ -1,2 +1,2 @@
 pub mod app;
-pub mod app_event;
+pub mod event;

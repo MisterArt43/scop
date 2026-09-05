@@ -7,10 +7,12 @@ use std::{
 use anyhow::Result;
 
 use crate::{
-    asset::{missing_texture_path, mtl::MtlMaterial}, gfx::{
+    asset::{missing_texture_path, mtl::MtlMaterial},
+    gfx::{
         material::Material,
         texture::{Texture, TextureFilter, TextureWrap},
-    }, image::Image,
+    },
+    image::Image,
 };
 
 pub struct MaterialLoader {
@@ -62,11 +64,9 @@ impl MaterialLoader {
         let mut texture = Texture::new_2d();
 
         texture.set_wrap(TextureWrap::Repeat, TextureWrap::Repeat);
-    	texture.set_filter(
-                TextureFilter::LinearMipmapLinear,
-                TextureFilter::Linear,
-            );
-        texture.upload(
+        texture.set_filter(TextureFilter::LinearMipmapLinear, TextureFilter::Linear);
+        texture
+            .upload(
                 image.width,
                 image.height,
                 &image.pixels,
@@ -110,19 +110,13 @@ fn find_texture(dir: &Path, name: &str) -> Option<PathBuf> {
             continue;
         }
 
-        let ext = path
-            .extension()?
-            .to_string_lossy()
-            .to_ascii_lowercase();
+        let ext = path.extension()?.to_string_lossy().to_ascii_lowercase();
 
         if !matches!(ext.as_str(), "bmp" | "ppm") {
             continue;
         }
 
-        let file_name = path
-            .file_stem()?
-            .to_string_lossy()
-            .to_ascii_lowercase();
+        let file_name = path.file_stem()?.to_string_lossy().to_ascii_lowercase();
 
         if file_name.contains(name) || name.contains(&file_name) {
             return Some(path);

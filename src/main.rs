@@ -12,13 +12,10 @@ use gl::{
 use glfw::{Context, ffi::glfwSwapBuffers};
 
 use crate::{
-    app::app::Application,
-    asset::MaterialLoader,
-    gfx::{
+    app::app::Application, asset::MaterialLoader, camera::camera::Camera, gfx::{
         material::Material,
         shader::Shader,
-    },
-    mesh::Actor,
+    }, math::transform, mesh::Actor,
 };
 
 pub mod app;
@@ -27,7 +24,7 @@ pub mod gfx;
 pub mod image;
 pub mod math;
 pub mod mesh;
-
+pub mod camera;
 
 fn main() {
     /*
@@ -112,6 +109,22 @@ fn main() {
         })
         .collect();
 
+    /*============================================
+     *               CAMERA
+     *=============================================**/
+
+    let transform = transform::Transform::new();
+    let projection = crate::camera::projection::Projection::perspective(
+        45.0,
+        800.0 / 800.0,
+        0.1,
+        100.0,
+    );
+    let mut camera = Camera::new(transform, projection);
+    let mut controller = crate::camera::controller::CameraController::new(
+        5.0,
+        0.01,
+    );
 
     /*==============================================================*/
     /*                         Main loop                            */
@@ -122,6 +135,8 @@ fn main() {
 
         app.process_events();
         app.update_delta_time();
+
+        controller.update(&mut camera, &app.event_handler.input, app.deltatime());
 
 
         /*===================== Clear ====================*/

@@ -40,6 +40,10 @@ impl Transform {
         self.scale
     }
 
+    pub fn get_mat4_rotation(&self) -> crate::math::mat4::Mat4 {
+        self.rotation.to_rotation_matrix()
+    }
+
     pub fn translate(&mut self, translation: Vec3) {
         self.position = self.position + translation;
     }
@@ -72,5 +76,17 @@ impl Transform {
 
             scale: self.scale * (1.0 - t) + other.scale * t,
         }
+    }
+
+    pub fn forward(&self) -> Vec3 {
+        self.rotation.rotate_vector(Vec3::new(0.0, 0.0, -1.0))
+    }
+
+    pub fn right(&self) -> Vec3 {
+        self.rotation.rotate_vector(Vec3::new(1.0, 0.0, 0.0))
+    }
+
+    pub fn up(&self) -> Vec3 {
+        self.rotation.rotate_vector(Vec3::new(0.0, 1.0, 0.0))
     }
 }

@@ -227,6 +227,15 @@ impl Quaternion {
         *self = q.mul(self).normalize();
     }
 
+    pub fn conjugate(&self) -> Quaternion {
+        Quaternion {
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
+            w: self.w,
+        }
+    }
+
     pub fn forward(&self) -> Vec3 {
         self.rotate_vector(Vec3::FORWARD)
     }

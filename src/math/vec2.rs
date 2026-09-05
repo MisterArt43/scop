@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -169,6 +169,21 @@ impl From<[f32; 2]> for Vec2 {
         Self {
             x: value[0],
             y: value[1],
+        }
+    }
+}
+
+/*==============================================================*/
+/*                         Negation                             */
+/*==============================================================*/
+
+impl Neg for Vec2 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Self {
+            x: -self.x,
+            y: -self.y,
         }
     }
 }

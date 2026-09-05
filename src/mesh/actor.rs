@@ -1,6 +1,6 @@
 use crate::{
     math::transform::Transform,
-    mesh::{SubMesh, parser},
+    mesh::{parser, SubMesh},
 };
 
 #[derive(Debug)]
@@ -10,10 +10,7 @@ pub struct Actor {
 }
 
 impl Actor {
-    pub fn new(
-        submeshes: Vec<SubMesh>,
-        transform: Option<Transform>,
-    ) -> Self {
+    pub fn new(submeshes: Vec<SubMesh>, transform: Option<Transform>) -> Self {
         Self {
             submeshes,
             transform: transform.unwrap_or_else(Transform::new),

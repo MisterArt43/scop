@@ -5,7 +5,6 @@ use std::{
 
 use crate::math::vec3::Vec3;
 
-
 /*==============================================================*/
 /*                        MtlMaterial                           */
 /*==============================================================*/
@@ -49,7 +48,6 @@ impl MtlMaterial {
     }
 }
 
-
 /*==============================================================*/
 /*                             Mtl                              */
 /*==============================================================*/
@@ -58,13 +56,8 @@ impl MtlMaterial {
 pub struct Mtl;
 
 impl Mtl {
-    pub fn load(
-        path: &str,
-        obj_path: &str,
-    ) -> Result<HashMap<String, MtlMaterial>, String> {
-        let obj_dir = Path::new(obj_path)
-            .parent()
-            .unwrap_or(Path::new("."));
+    pub fn load(path: &str, obj_path: &str) -> Result<HashMap<String, MtlMaterial>, String> {
+        let obj_dir = Path::new(obj_path).parent().unwrap_or(Path::new("."));
 
         let path = obj_dir.join(path);
 
@@ -89,9 +82,7 @@ impl Mtl {
                         materials.insert(material.name.clone(), material);
                     }
 
-                    current = Some(MtlMaterial::new(
-                        parts.next().unwrap_or("default"),
-                    ));
+                    current = Some(MtlMaterial::new(parts.next().unwrap_or("default")));
                 }
 
                 Some("Ka") => {
@@ -120,8 +111,7 @@ impl Mtl {
 
                 Some("Ni") => {
                     if let Some(material) = &mut current {
-                        material.index_of_refraction =
-                            parts.next().and_then(|v| v.parse().ok());
+                        material.index_of_refraction = parts.next().and_then(|v| v.parse().ok());
                     }
                 }
 
@@ -139,22 +129,19 @@ impl Mtl {
 
                 Some("illum") => {
                     if let Some(material) = &mut current {
-                        material.illumination_model =
-                            parts.next().and_then(|v| v.parse().ok());
+                        material.illumination_model = parts.next().and_then(|v| v.parse().ok());
                     }
                 }
 
                 Some("map_Kd") => {
                     if let Some(material) = &mut current {
-                        material.diffuse_texture =
-                            Self::parse_texture_path(line);
+                        material.diffuse_texture = Self::parse_texture_path(line);
                     }
                 }
 
                 Some("map_Ks") | Some("map_Km") | Some("Km") => {
                     if let Some(material) = &mut current {
-                        material.specular_texture =
-                            Self::parse_texture_path(line);
+                        material.specular_texture = Self::parse_texture_path(line);
                     }
                 }
 
@@ -169,9 +156,7 @@ impl Mtl {
         Ok(materials)
     }
 
-    fn parse_vec3<'a>(
-        mut parts: impl Iterator<Item = &'a str>,
-    ) -> Vec3 {
+    fn parse_vec3<'a>(mut parts: impl Iterator<Item = &'a str>) -> Vec3 {
         Vec3::new(
             parts.next().and_then(|v| v.parse().ok()).unwrap_or(0.0),
             parts.next().and_then(|v| v.parse().ok()).unwrap_or(0.0),
@@ -179,13 +164,8 @@ impl Mtl {
         )
     }
 
-    fn parse_f32<'a>(
-        mut parts: impl Iterator<Item = &'a str>,
-    ) -> f32 {
-        parts
-            .next()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(0.0)
+    fn parse_f32<'a>(mut parts: impl Iterator<Item = &'a str>) -> f32 {
+        parts.next().and_then(|v| v.parse().ok()).unwrap_or(0.0)
     }
 
     fn parse_texture_path(line: &str) -> Option<PathBuf> {

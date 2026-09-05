@@ -1,4 +1,6 @@
-use crate::math::vec3::Vec3;
+use std::ops::Mul;
+
+use crate::math::{quaternion::Quaternion, vec3::Vec3};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Mat4 {
@@ -114,5 +116,43 @@ impl Mat4 {
         m.data[2][3] = -1.0;
         m.data[3][2] = 2.0 * far * near * nf;
         m
+    }
+
+    pub fn orthographic(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Mat4 {
+        let rl = 1.0 / (right - left);
+        let tb = 1.0 / (top - bottom);
+        let fn_ = 1.0 / (far - near);
+
+        let mut m = Mat4::new();
+        m.data[0][0] = 2.0 * rl;
+        m.data[1][1] = 2.0 * tb;
+        m.data[2][2] = -2.0 * fn_;
+        m.data[3][0] = -(right + left) * rl;
+        m.data[3][1] = -(top + bottom) * tb;
+        m.data[3][2] = -(far + near) * fn_;
+        m.data[3][3] = 1.0;
+        m
+    }
+
+    pub fn translation(translation: Vec3) -> Mat4 {
+        let mut m = Mat4::identity();
+        m.data[3][0] = translation.x;
+        m.data[3][1] = translation.y;
+        m.data[3][2] = translation.z;
+        m
+    }
+}
+
+impl From<Quaternion> for Mat4 {
+    fn from(q: Quaternion) -> Self {
+        q.to_rotation_matrix()
+    }
+}
+
+impl Mul<Mat4> for Mat4 {
+    type Output = Mat4;
+
+    fn mul(self, other: Mat4) -> Self::Output {
+        self.mul(&other)
     }
 }

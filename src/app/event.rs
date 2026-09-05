@@ -3,7 +3,7 @@ use std::{collections::HashSet, path::PathBuf};
 use glfw::PWindow;
 
 pub struct AppEvent {
-    pub input: InputEvent,
+    pub input: InputState,
     pub frame_buffer_size: (i32, i32),
     pub focus: bool,
     pub iconified: bool, // Indique si la fenêtre est minimize
@@ -13,25 +13,37 @@ pub struct AppEvent {
     should_close: bool,
 }
 
-pub struct InputEvent {
+pub struct InputState {
+    pub key_down: HashSet<glfw::Key>,
+    pub mouse_button_down: HashSet<glfw::MouseButton>,
+
     pub key_pressed: HashSet<glfw::Key>,
     pub key_released: HashSet<glfw::Key>,
-    pub mouse_moved: Option<(f64, f64)>, // curpos
+
+    pub mouse_position: Option<(f64, f64)>, // curpos
     pub mouse_scrolled: Option<(f64, f64)>,
+
     pub mouse_button_pressed: HashSet<glfw::MouseButton>,
     pub mouse_button_released: HashSet<glfw::MouseButton>,
+
     pub modifiers: glfw::Modifiers,
 }
 
-impl InputEvent {
+impl InputState {
     fn new() -> Self {
-        InputEvent {
+        InputState {
+            key_down: HashSet::new(),
+            mouse_button_down: HashSet::new(),
+
             key_pressed: HashSet::new(),
             key_released: HashSet::new(),
-            mouse_moved: None,
+
+            mouse_position: None,
             mouse_scrolled: None,
+
             mouse_button_pressed: HashSet::new(),
             mouse_button_released: HashSet::new(),
+
             modifiers: glfw::Modifiers::empty(),
         }
     }
@@ -51,12 +63,36 @@ impl InputEvent {
     pub fn super_key(&self) -> bool {
         self.modifiers.contains(glfw::Modifiers::Super)
     }
+
+    pub fn key_down(&self, key: glfw::Key) -> bool {
+        self.key_down.contains(&key)
+    }
+
+    pub fn key_pressed(&self, key: glfw::Key) -> bool {
+        self.key_pressed.contains(&key)
+    }
+
+    pub fn key_released(&self, key: glfw::Key) -> bool {
+        self.key_released.contains(&key)
+    }
+
+    pub fn mouse_down(&self, button: glfw::MouseButton) -> bool {
+        self.mouse_button_down.contains(&button)
+    }
+
+    pub fn mouse_pressed(&self, button: glfw::MouseButton) -> bool {
+        self.mouse_button_pressed.contains(&button)
+    }
+
+    pub fn mouse_released(&self, button: glfw::MouseButton) -> bool {
+        self.mouse_button_released.contains(&button)
+    }
 }
 
 impl AppEvent {
     pub fn new() -> Self {
         AppEvent {
-            input: InputEvent::new(),
+            input: InputState::new(),
             frame_buffer_size: (0, 0),
             focus: false,
             iconified: false,
@@ -90,17 +126,39 @@ impl AppEvent {
         glfw.poll_events();
         for (_id, event) in glfw::flush_messages(&events) {
             match event {
-                glfw::WindowEvent::Close => { self.close_event(window); }
-                glfw::WindowEvent::Focus(focused) => { self.focus_event(focused); }
-                glfw::WindowEvent::Iconify(iconified) => { self.iconify_event(iconified); }
-                glfw::WindowEvent::FramebufferSize(width, height) => { self.framebuffer_size_event(width, height); }
-                glfw::WindowEvent::MouseButton(button, action, mods) => { self.mouse_button_event(button, action, mods); }
-                glfw::WindowEvent::CursorPos(x, y) => { self.mouse_move_event(x, y); }
-                glfw::WindowEvent::CursorEnter(enter) => { self.cursor_enter_event(enter); }
-                glfw::WindowEvent::Scroll(x, y) => { self.mouse_scroll_event(x, y); }
-                glfw::WindowEvent::Key(key, _scancode, action, mods) => { self.key_event(key, action, mods); }
-                glfw::WindowEvent::FileDrop(paths) => { self.file_drop_event(paths); }
-                glfw::WindowEvent::Maximize(maximized) => { self.maximize_event(maximized); }
+                glfw::WindowEvent::Close => {
+                    self.close_event(window);
+                }
+                glfw::WindowEvent::Focus(focused) => {
+                    self.focus_event(focused);
+                }
+                glfw::WindowEvent::Iconify(iconified) => {
+                    self.iconify_event(iconified);
+                }
+                glfw::WindowEvent::FramebufferSize(width, height) => {
+                    self.framebuffer_size_event(width, height);
+                }
+                glfw::WindowEvent::MouseButton(button, action, mods) => {
+                    self.mouse_button_event(button, action, mods);
+                }
+                glfw::WindowEvent::CursorPos(x, y) => {
+                    self.mouse_move_event(x, y);
+                }
+                glfw::WindowEvent::CursorEnter(enter) => {
+                    self.cursor_enter_event(enter);
+                }
+                glfw::WindowEvent::Scroll(x, y) => {
+                    self.mouse_scroll_event(x, y);
+                }
+                glfw::WindowEvent::Key(key, _scancode, action, mods) => {
+                    self.key_event(key, action, mods);
+                }
+                glfw::WindowEvent::FileDrop(paths) => {
+                    self.file_drop_event(paths);
+                }
+                glfw::WindowEvent::Maximize(maximized) => {
+                    self.maximize_event(maximized);
+                }
                 _ => {}
             }
         }
@@ -117,14 +175,16 @@ impl AppEvent {
 
         match action {
             glfw::Action::Press => {
+                self.input.key_down.insert(key);
                 self.input.key_pressed.insert(key);
                 self.input.key_released.remove(&key);
             }
             glfw::Action::Release => {
+                self.input.key_down.remove(&key);
                 self.input.key_released.insert(key);
                 self.input.key_pressed.remove(&key);
             }
-            _ => {}
+            glfw::Action::Repeat => {}
         }
     }
 
@@ -138,19 +198,23 @@ impl AppEvent {
 
         match action {
             glfw::Action::Press => {
+                self.input.mouse_button_down.insert(button);
+
                 self.input.mouse_button_pressed.insert(button);
                 self.input.mouse_button_released.remove(&button);
             }
             glfw::Action::Release => {
+                self.input.mouse_button_down.remove(&button);
+
                 self.input.mouse_button_released.insert(button);
                 self.input.mouse_button_pressed.remove(&button);
             }
-            _ => {}
+            glfw::Action::Repeat => {}
         }
     }
 
     fn mouse_move_event(&mut self, x: f64, y: f64) {
-        self.input.mouse_moved = Some((x, y));
+        self.input.mouse_position = Some((x, y));
     }
 
     fn mouse_scroll_event(&mut self, x: f64, y: f64) {
@@ -188,8 +252,9 @@ impl AppEvent {
     pub fn clear_input_events(&mut self) {
         self.input.key_pressed.clear();
         self.input.key_released.clear();
-        self.input.mouse_moved = None;
+
         self.input.mouse_scrolled = None;
+
         self.input.mouse_button_pressed.clear();
         self.input.mouse_button_released.clear();
     }

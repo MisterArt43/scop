@@ -2,15 +2,12 @@ use crate::{
     asset::{Mtl, MtlMaterial},
     math::transform::Transform,
     mesh::{
-        Mesh, SubMesh, Vertex,
         vertex::{ObjIndex, VertexKey},
+        Mesh, SubMesh, Vertex,
     },
 };
 
-use std::{
-    collections::HashMap,
-    fs,
-};
+use std::{collections::HashMap, fs};
 
 pub struct Builder {
     pub vertices: Vec<Vertex>,
@@ -54,8 +51,8 @@ impl Builder {
 }
 
 pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
-    let obj_file = fs::read_to_string(path)
-        .map_err(|e| format!("Failed to read .obj file: {e}"))?;
+    let obj_file =
+        fs::read_to_string(path).map_err(|e| format!("Failed to read .obj file: {e}"))?;
 
     let mut mtl_data_map: HashMap<String, MtlMaterial> = HashMap::new();
     let mut builder = Builder::new();
@@ -96,31 +93,21 @@ pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
                     let raw_key = parse_face(part);
 
                     let key = VertexKey {
-                        v: resolve_vertex_index(
-                            raw_key.v,
-                            vertex_positions.len(),
-                        ),
+                        v: resolve_vertex_index(raw_key.v, vertex_positions.len()),
 
-                        vt: raw_key.vt.map(|i| {
-                            resolve_vertex_index(
-                                i,
-                                vertex_uvs.len(),
-                            )
-                        }),
+                        vt: raw_key
+                            .vt
+                            .map(|i| resolve_vertex_index(i, vertex_uvs.len())),
 
-                        vn: raw_key.vn.map(|i| {
-                            resolve_vertex_index(
-                                i,
-                                vertex_normals.len(),
-                            )
-                        }),
+                        vn: raw_key
+                            .vn
+                            .map(|i| resolve_vertex_index(i, vertex_normals.len())),
                     };
 
                     let index = if let Some(&index) = builder.map.get(&key) {
                         index
                     } else {
-                        let mut color =
-                            vertex_colors[key.v].unwrap_or([1.0; 3]);
+                        let mut color = vertex_colors[key.v].unwrap_or([1.0; 3]);
 
                         if color == [0.0; 3] {
                             color = [1.0; 3];
@@ -129,10 +116,7 @@ pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
                         let vertex = Vertex {
                             position: vertex_positions[key.v],
 
-                            normal: key.vn.map_or(
-                                [0.0; 3],
-                                |i| vertex_normals[i],
-                            ),
+                            normal: key.vn.map_or([0.0; 3], |i| vertex_normals[i]),
 
                             uv: key.vt.map_or_else(
                                 || {
@@ -149,8 +133,7 @@ pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
 
                         builder.vertices.push(vertex);
 
-                        let index =
-                            builder.vertices.len() as u32 - 1;
+                        let index = builder.vertices.len() as u32 - 1;
 
                         builder.map.insert(key, index);
 
@@ -174,72 +157,43 @@ pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
             }
 
             Some("o") => {
-                flush_builder_if_needed(
-                    &mut builder,
-                    &mut meshes,
-                );
+                flush_builder_if_needed(&mut builder, &mut meshes);
 
-                builder.object = parts
-                    .next()
-                    .unwrap_or("default")
-                    .to_string();
+                builder.object = parts.next().unwrap_or("default").to_string();
             }
 
             Some("g") => {
-                flush_builder_if_needed(
-                    &mut builder,
-                    &mut meshes,
-                );
+                flush_builder_if_needed(&mut builder, &mut meshes);
 
-                builder.group = parts
-                    .next()
-                    .unwrap_or("default")
-                    .to_string();
+                builder.group = parts.next().unwrap_or("default").to_string();
             }
 
             Some("mtllib") => {
                 if let Some(mtl_path) = parts.next() {
-                    if let Ok(materials) =
-                        Mtl::load(mtl_path, path)
-                    {
+                    if let Ok(materials) = Mtl::load(mtl_path, path) {
                         mtl_data_map.extend(materials);
                     }
                 }
             }
 
             Some("usemtl") => {
-                flush_builder_if_needed(
-                    &mut builder,
-                    &mut meshes,
-                );
+                flush_builder_if_needed(&mut builder, &mut meshes);
 
-                builder.material = parts
-                    .next()
-                    .unwrap_or("default")
-                    .to_string();
+                builder.material = parts.next().unwrap_or("default").to_string();
 
-                builder.material_data =
-                    mtl_data_map
-                        .get(&builder.material)
-                        .cloned();
+                builder.material_data = mtl_data_map.get(&builder.material).cloned();
             }
 
             _ => {}
         }
     }
 
-    flush_builder_if_needed(
-        &mut builder,
-        &mut meshes,
-    );
+    flush_builder_if_needed(&mut builder, &mut meshes);
 
     Ok(meshes)
 }
 
-fn flush_builder_if_needed(
-    builder: &mut Builder,
-    meshes: &mut Vec<SubMesh>,
-) {
+fn flush_builder_if_needed(builder: &mut Builder, meshes: &mut Vec<SubMesh>) {
     if builder.is_empty() {
         return;
     }
@@ -249,10 +203,7 @@ fn flush_builder_if_needed(
         group: builder.group.clone(),
         material: builder.material.clone(),
 
-        mesh: Mesh::new(
-            &builder.vertices,
-            &builder.indices,
-        ),
+        mesh: Mesh::new(&builder.vertices, &builder.indices),
 
         material_data: builder.material_data.clone(),
 
