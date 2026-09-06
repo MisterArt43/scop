@@ -169,10 +169,12 @@ pub fn parse_obj(path: &str) -> Result<Vec<SubMesh>, String> {
             }
 
             Some("mtllib") => {
-                if let Some(mtl_path) = parts.next() {
-                    if let Ok(materials) = Mtl::load(mtl_path, path) {
-                        mtl_data_map.extend(materials);
-                    }
+                let Some(mtl_path) = line.strip_prefix("mtllib").map(str::trim) else {
+                    continue;
+                };
+
+                if let Ok(materials) = Mtl::load(mtl_path, path) {
+                    mtl_data_map.extend(materials);
                 }
             }
 
