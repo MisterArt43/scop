@@ -141,6 +141,14 @@ impl Mat4 {
         m.data[3][2] = translation.z;
         m
     }
+
+    pub fn scaling(scale: Vec3) -> Mat4 {
+        let mut m = Mat4::identity();
+        m.data[0][0] = scale.x;
+        m.data[1][1] = scale.y;
+        m.data[2][2] = scale.z;
+        m
+    }
 }
 
 impl From<Quaternion> for Mat4 {
