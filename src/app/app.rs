@@ -9,8 +9,6 @@ pub struct Application {
     pub(crate) window: glfw::PWindow,
     events: glfw::GlfwReceiver<(f64, glfw::WindowEvent)>,
     pub event_handler: event::AppEvent,
-    pub width: i32,
-    pub height: i32,
 
     last_time: Instant,
 
@@ -35,6 +33,7 @@ impl Application {
         glfw.window_hint(glfw::WindowHint::DoubleBuffer(true));
         glfw.window_hint(glfw::WindowHint::Resizable(true));
         glfw.window_hint(glfw::WindowHint::Visible(true));
+        glfw.window_hint(glfw::WindowHint::TransparentFramebuffer(true));
 
         let (window, events) = glfw
             .create_window(
@@ -50,13 +49,12 @@ impl Application {
             window,
             events,
             event_handler: event::AppEvent::new(),
-            width: 0,
-            height: 0,
             delta_time: 0.0,
             last_time: Instant::now(),
             to_rerender: true,
         };
 
+        app.event_handler.frame_buffer_size = (width as i32, height as i32);
         app.event_handler.init_glfw_events(&mut app.window);
         app.window.make_current();
 

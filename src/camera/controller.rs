@@ -48,16 +48,25 @@ impl CameraController {
     }
 
     pub fn update(&mut self, camera: &mut Camera, input: &InputState, delta_time: f32) {
-        if !matches!(camera.view_mode, ViewMode::Free) {
-            return;
+        if input.key_pressed(Key::C) {
+            camera.view_mode = match camera.view_mode {
+                ViewMode::Free => ViewMode::LookAt {
+                    target: Vec3::new(0.0, 0.0, 0.0),
+                    up: Vec3::new(0.0, 1.0, 0.0),
+                },
+                ViewMode::LookAt { .. } => ViewMode::Free,
+            };
+            self.reset_mouse();
         }
 
         self.update_movement(camera, input, delta_time);
 
-        self.update_rotation(camera, input);
+        if matches!(camera.view_mode, ViewMode::Free) {
+            self.update_rotation(camera, input);
+        }
     }
 
-    fn update_movement(&self, camera: &mut Camera, input: &InputState, delta_time: f32) {
+    fn update_movement(&mut self, camera: &mut Camera, input: &InputState, delta_time: f32) {
         let basis = camera.basis();
 
         let mut direction = Vec3::new(0.0, 0.0, 0.0);
@@ -78,12 +87,19 @@ impl CameraController {
             direction -= basis.right;
         }
 
-        if input.key_down(Key::Space) {
+        if input.key_down(Key::E) {
             direction += Vec3::new(0.0, 1.0, 0.0);
         }
 
-        if input.key_down(Key::LeftControl) {
+        if input.key_down(Key::Q) {
             direction -= Vec3::new(0.0, 1.0, 0.0);
+        }
+
+        if input.key_down(Key::LeftShift) {
+            self.move_speed *= 2.0;
+        }
+        if input.key_released(Key::LeftShift) {
+            self.move_speed /= 2.0;
         }
 
         if direction.length() > 0.0 {
