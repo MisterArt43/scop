@@ -123,6 +123,7 @@ impl AppEvent {
         window: &mut PWindow,
         events: &glfw::GlfwReceiver<(f64, glfw::WindowEvent)>,
     ) {
+        self.clear_input_events();
         glfw.poll_events();
         for (_id, event) in glfw::flush_messages(&events) {
             match event {
