@@ -22,4 +22,11 @@ impl Actor {
 
         Ok(Self::new(submeshes, None))
     }
+
+    pub fn model_matrix(&self) -> crate::math::mat4::Mat4 {
+        let translation = crate::math::mat4::Mat4::translation(self.transform.position);
+        let rotation = self.transform.get_mat4_rotation();
+        let scale = crate::math::mat4::Mat4::scaling(self.transform.scale);
+        translation * rotation * scale
+    }
 }
