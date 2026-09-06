@@ -86,6 +86,10 @@ impl Camera {
         self.projection.matrix()
     }
 
+    pub fn update_projection(&mut self, projection: Projection) {
+        self.projection = projection;
+    }
+
     pub fn view_projection_mat(&self) -> Mat4 {
         self.projection_mat() * self.view_mat()
     }
